@@ -1,7 +1,6 @@
 {
     "server": {
         "endpoint": "127.0.0.1:12345",
-        "health_key": "health_key"
     },
     "admin": {
         "kick_mode": 1
@@ -12,7 +11,7 @@
             "port": 3306,
             "username": "root",
             "password": "passwd",
-            "dbname": "wxlogin_db"
+            "dbname": "login_db"
         },
         "pool_size": 10
     },

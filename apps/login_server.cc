@@ -81,7 +81,6 @@ public:
         MessageToJsonString(*req, &jsonP, options);
         LOG_F(INFO, "register request:\n%s", jsonP.c_str());
 
-        UserSecureInfo usi;
         CommonHeaderResp header;
 
         if (!login::validRegisterReq(req))
@@ -93,6 +92,17 @@ public:
         }
         LOG_F(INFO, "req fields check ok");
 
+        string userName = req->header().user_name();
+        UserSecureInfo usi;
+
+        if (Dao::Instance().GetUserSecureInfo(userName, usi))
+        {
+            SetCommonHeaderResp(header, RespCode::User_Already_Registered);
+            resp->mutable_header()->CopyFrom(header);
+            return Status::OK;
+        }
+
+
         string phoneNumber(req->phone_number());
         if (Dao::Instance().GetUserSecureInfoByPhone(phoneNumber, usi))
         {
@@ -102,7 +112,6 @@ public:
         }
 
         LOG_F(INFO, "phone number %s not registered, start registering..", phoneNumber.c_str());
-
         if (!Dao::Instance().AddRegisterInfo(req))
         {
             LOG_F(INFO, "internal db op failed.request:\n%s", jsonP.c_str());
@@ -115,6 +124,8 @@ public:
 
         SetCommonHeaderResp(header, RespCode::OK);
         resp->mutable_header()->CopyFrom(header);
+        string token = BasicSession::Instance().genToken(userName, req->device_info().system_type());
+        resp->set_token(token);
 
         return Status::OK;
     }
@@ -142,7 +153,6 @@ public:
             SetCommonHeaderResp(header, RespCode::Invalid_Header_Request);
             resp.mutable_header()->CopyFrom(header);
 
-            // add generated token; add user info
             writer->Write(resp);
             return Status::OK;
         }
@@ -187,7 +197,7 @@ public:
                 string deviceS;
                 MessageToJsonString(deviceInfo, &deviceS, options);
 
-                LOG_F(INFO, "kickout resp msg for %s:%s\n", userName.c_str(), deviceS.c_str());
+                LOG_F(INFO, "kickout resp msg for %s:\n%s", userName.c_str(), deviceS.c_str());
                 shared_ptr<MsgItem> pMsg = make_shared<MsgItem>(MsgType::MT_KickedOut, deviceS);
 
                 Hub::Instance().AddMsg(userName, pMsg);
@@ -208,11 +218,8 @@ public:
         Hub::Instance().AddUser(userName, userStream);
         Dao::Instance().AddLoginInfo(req);
 
-        // for new stream, send two messages: 1)token info 2)user basic info
-        string token = BasicSession::Instance().genToken(userName, deviceInfo.system_type());
-        shared_ptr<MsgItem> pToken = make_shared<MsgItem>(MsgType::MT_LoginSucceed, json(LoginSucceedResp{token}).dump(4));
-        shared_ptr<MsgItem> pBasic = make_shared<MsgItem>(MsgType::MT_UserInfo, json(ubi).dump(4));
-        Hub::Instance().AddMsg(userName, pToken);
+        // for new stream, send user basic info
+        shared_ptr<MsgItem> pBasic = make_shared<MsgItem>(MsgType::MT_LoginSucceed, json(ubi).dump(4));
         Hub::Instance().AddMsg(userName, pBasic);
 
         while (1)

@@ -917,8 +917,25 @@ class RegisterResp :
   // accessors -------------------------------------------------------
 
   enum : int {
+    kTokenFieldNumber = 2,
     kHeaderFieldNumber = 1,
   };
+  // string token = 2;
+  void clear_token();
+  const std::string& token() const;
+  void set_token(const std::string& value);
+  void set_token(std::string&& value);
+  void set_token(const char* value);
+  void set_token(const char* value, size_t size);
+  std::string* mutable_token();
+  std::string* release_token();
+  void set_allocated_token(std::string* token);
+  private:
+  const std::string& _internal_token() const;
+  void _internal_set_token(const std::string& value);
+  std::string* _internal_mutable_token();
+  public:
+
   // .protocol.login.v1.CommonHeaderResp header = 1;
   bool has_header() const;
   private:
@@ -939,6 +956,7 @@ class RegisterResp :
   class _Internal;
 
   ::PROTOBUF_NAMESPACE_ID::internal::InternalMetadataWithArena _internal_metadata_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr token_;
   ::protocol::login::v1::CommonHeaderResp* header_;
   mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
   friend struct ::TableStruct_login_2eproto;
@@ -3260,6 +3278,66 @@ inline void RegisterResp::set_allocated_header(::protocol::login::v1::CommonHead
   }
   header_ = header;
   // @@protoc_insertion_point(field_set_allocated:protocol.login.v1.RegisterResp.header)
+}
+
+// string token = 2;
+inline void RegisterResp::clear_token() {
+  token_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline const std::string& RegisterResp::token() const {
+  // @@protoc_insertion_point(field_get:protocol.login.v1.RegisterResp.token)
+  return _internal_token();
+}
+inline void RegisterResp::set_token(const std::string& value) {
+  _internal_set_token(value);
+  // @@protoc_insertion_point(field_set:protocol.login.v1.RegisterResp.token)
+}
+inline std::string* RegisterResp::mutable_token() {
+  // @@protoc_insertion_point(field_mutable:protocol.login.v1.RegisterResp.token)
+  return _internal_mutable_token();
+}
+inline const std::string& RegisterResp::_internal_token() const {
+  return token_.GetNoArena();
+}
+inline void RegisterResp::_internal_set_token(const std::string& value) {
+  
+  token_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+}
+inline void RegisterResp::set_token(std::string&& value) {
+  
+  token_.SetNoArena(
+    &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:protocol.login.v1.RegisterResp.token)
+}
+inline void RegisterResp::set_token(const char* value) {
+  GOOGLE_DCHECK(value != nullptr);
+  
+  token_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:protocol.login.v1.RegisterResp.token)
+}
+inline void RegisterResp::set_token(const char* value, size_t size) {
+  
+  token_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:protocol.login.v1.RegisterResp.token)
+}
+inline std::string* RegisterResp::_internal_mutable_token() {
+  
+  return token_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline std::string* RegisterResp::release_token() {
+  // @@protoc_insertion_point(field_release:protocol.login.v1.RegisterResp.token)
+  
+  return token_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+}
+inline void RegisterResp::set_allocated_token(std::string* token) {
+  if (token != nullptr) {
+    
+  } else {
+    
+  }
+  token_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), token);
+  // @@protoc_insertion_point(field_set_allocated:protocol.login.v1.RegisterResp.token)
 }
 
 // -------------------------------------------------------------------

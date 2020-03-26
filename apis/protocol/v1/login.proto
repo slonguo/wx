@@ -45,6 +45,7 @@ message RegisterReq {
 // Register Response
 message RegisterResp {
     CommonHeaderResp header = 1;
+    string token = 2;
 }
 
 // Login Request

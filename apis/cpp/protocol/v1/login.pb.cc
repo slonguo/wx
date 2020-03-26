@@ -355,6 +355,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_login_2eproto::offsets[] PROTO
   ~0u,  // no _oneof_case_
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::protocol::login::v1::RegisterResp, header_),
+  PROTOBUF_FIELD_OFFSET(::protocol::login::v1::RegisterResp, token_),
   ~0u,  // no _has_bits_
   PROTOBUF_FIELD_OFFSET(::protocol::login::v1::LoginReq, _internal_metadata_),
   ~0u,  // no _extensions_
@@ -437,16 +438,16 @@ static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOB
   { 15, -1, sizeof(::protocol::login::v1::DeviceInfo)},
   { 25, -1, sizeof(::protocol::login::v1::RegisterReq)},
   { 34, -1, sizeof(::protocol::login::v1::RegisterResp)},
-  { 40, -1, sizeof(::protocol::login::v1::LoginReq)},
-  { 49, -1, sizeof(::protocol::login::v1::LoginResp_MessageItem)},
-  { 56, -1, sizeof(::protocol::login::v1::LoginResp)},
-  { 63, -1, sizeof(::protocol::login::v1::BasicInfoItem)},
-  { 73, -1, sizeof(::protocol::login::v1::UpdateBasicInfoReq)},
-  { 80, -1, sizeof(::protocol::login::v1::UpdateBasicInfoResp)},
-  { 87, -1, sizeof(::protocol::login::v1::LogoutReq)},
-  { 93, -1, sizeof(::protocol::login::v1::LogoutResp)},
-  { 99, -1, sizeof(::protocol::login::v1::AdminReq)},
-  { 108, -1, sizeof(::protocol::login::v1::AdminResp)},
+  { 41, -1, sizeof(::protocol::login::v1::LoginReq)},
+  { 50, -1, sizeof(::protocol::login::v1::LoginResp_MessageItem)},
+  { 57, -1, sizeof(::protocol::login::v1::LoginResp)},
+  { 64, -1, sizeof(::protocol::login::v1::BasicInfoItem)},
+  { 74, -1, sizeof(::protocol::login::v1::UpdateBasicInfoReq)},
+  { 81, -1, sizeof(::protocol::login::v1::UpdateBasicInfoResp)},
+  { 88, -1, sizeof(::protocol::login::v1::LogoutReq)},
+  { 94, -1, sizeof(::protocol::login::v1::LogoutResp)},
+  { 100, -1, sizeof(::protocol::login::v1::AdminReq)},
+  { 109, -1, sizeof(::protocol::login::v1::AdminResp)},
 };
 
 static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
@@ -478,44 +479,45 @@ const char descriptor_table_protodef_login_2eproto[] PROTOBUF_SECTION_VARIABLE(p
   "erReq\0222\n\006header\030\001 \001(\0132\".protocol.login.v"
   "1.CommonHeaderReq\022\024\n\014phone_number\030\002 \001(\t\022"
   "2\n\013device_info\030\003 \001(\0132\035.protocol.login.v1"
-  ".DeviceInfo\022\014\n\004sign\030\004 \001(\t\"C\n\014RegisterRes"
+  ".DeviceInfo\022\014\n\004sign\030\004 \001(\t\"R\n\014RegisterRes"
   "p\0223\n\006header\030\001 \001(\0132#.protocol.login.v1.Co"
-  "mmonHeaderResp\"\224\001\n\010LoginReq\0222\n\006header\030\001 "
-  "\001(\0132\".protocol.login.v1.CommonHeaderReq\022"
-  "\022\n\nlogin_type\030\002 \001(\r\0222\n\013device_info\030\003 \001(\013"
-  "2\035.protocol.login.v1.DeviceInfo\022\014\n\004sign\030"
-  "\004 \001(\t\"\256\001\n\tLoginResp\0223\n\006header\030\001 \001(\0132#.pr"
-  "otocol.login.v1.CommonHeaderResp\022:\n\010mess"
-  "ages\030\002 \003(\0132(.protocol.login.v1.LoginResp"
-  ".MessageItem\0320\n\013MessageItem\022\020\n\010msg_type\030"
-  "\001 \001(\r\022\017\n\007content\030\002 \001(\t\"h\n\rBasicInfoItem\022"
-  "\021\n\tuser_name\030\001 \001(\t\022\021\n\tuser_nick\030\002 \001(\t\022\016\n"
-  "\006gender\030\003 \001(\r\022\016\n\006avatar\030\004 \001(\t\022\021\n\tsignatu"
-  "re\030\005 \001(\t\"x\n\022UpdateBasicInfoReq\0222\n\006header"
-  "\030\001 \001(\0132\".protocol.login.v1.CommonHeaderR"
-  "eq\022.\n\004info\030\002 \001(\0132 .protocol.login.v1.Bas"
-  "icInfoItem\"z\n\023UpdateBasicInfoResp\0223\n\006hea"
-  "der\030\001 \001(\0132#.protocol.login.v1.CommonHead"
-  "erResp\022.\n\004info\030\002 \001(\0132 .protocol.login.v1"
-  ".BasicInfoItem\"\?\n\tLogoutReq\0222\n\006header\030\001 "
-  "\001(\0132\".protocol.login.v1.CommonHeaderReq\""
-  "A\n\nLogoutResp\0223\n\006header\030\001 \001(\0132#.protocol"
-  ".login.v1.CommonHeaderResp\"c\n\010AdminReq\0222"
-  "\n\006header\030\001 \001(\0132\".protocol.login.v1.Commo"
-  "nHeaderReq\022\013\n\003cmd\030\002 \001(\t\022\n\n\002f1\030\003 \001(\t\022\n\n\002f"
-  "2\030\004 \001(\t\"P\n\tAdminResp\0223\n\006header\030\001 \001(\0132#.p"
-  "rotocol.login.v1.CommonHeaderResp\022\016\n\006res"
-  "ult\030\002 \001(\t2\226\003\n\010LoginAPI\022M\n\010Register\022\036.pro"
-  "tocol.login.v1.RegisterReq\032\037.protocol.lo"
-  "gin.v1.RegisterResp\"\000\022F\n\005Login\022\033.protoco"
-  "l.login.v1.LoginReq\032\034.protocol.login.v1."
-  "LoginResp\"\0000\001\022b\n\017UpdateBasicInfo\022%.proto"
-  "col.login.v1.UpdateBasicInfoReq\032&.protoc"
-  "ol.login.v1.UpdateBasicInfoResp\"\000\022G\n\006Log"
-  "out\022\034.protocol.login.v1.LogoutReq\032\035.prot"
-  "ocol.login.v1.LogoutResp\"\000\022F\n\007AdminOp\022\033."
-  "protocol.login.v1.AdminReq\032\034.protocol.lo"
-  "gin.v1.AdminResp\"\000b\006proto3"
+  "mmonHeaderResp\022\r\n\005token\030\002 \001(\t\"\224\001\n\010LoginR"
+  "eq\0222\n\006header\030\001 \001(\0132\".protocol.login.v1.C"
+  "ommonHeaderReq\022\022\n\nlogin_type\030\002 \001(\r\0222\n\013de"
+  "vice_info\030\003 \001(\0132\035.protocol.login.v1.Devi"
+  "ceInfo\022\014\n\004sign\030\004 \001(\t\"\256\001\n\tLoginResp\0223\n\006he"
+  "ader\030\001 \001(\0132#.protocol.login.v1.CommonHea"
+  "derResp\022:\n\010messages\030\002 \003(\0132(.protocol.log"
+  "in.v1.LoginResp.MessageItem\0320\n\013MessageIt"
+  "em\022\020\n\010msg_type\030\001 \001(\r\022\017\n\007content\030\002 \001(\t\"h\n"
+  "\rBasicInfoItem\022\021\n\tuser_name\030\001 \001(\t\022\021\n\tuse"
+  "r_nick\030\002 \001(\t\022\016\n\006gender\030\003 \001(\r\022\016\n\006avatar\030\004"
+  " \001(\t\022\021\n\tsignature\030\005 \001(\t\"x\n\022UpdateBasicIn"
+  "foReq\0222\n\006header\030\001 \001(\0132\".protocol.login.v"
+  "1.CommonHeaderReq\022.\n\004info\030\002 \001(\0132 .protoc"
+  "ol.login.v1.BasicInfoItem\"z\n\023UpdateBasic"
+  "InfoResp\0223\n\006header\030\001 \001(\0132#.protocol.logi"
+  "n.v1.CommonHeaderResp\022.\n\004info\030\002 \001(\0132 .pr"
+  "otocol.login.v1.BasicInfoItem\"\?\n\tLogoutR"
+  "eq\0222\n\006header\030\001 \001(\0132\".protocol.login.v1.C"
+  "ommonHeaderReq\"A\n\nLogoutResp\0223\n\006header\030\001"
+  " \001(\0132#.protocol.login.v1.CommonHeaderRes"
+  "p\"c\n\010AdminReq\0222\n\006header\030\001 \001(\0132\".protocol"
+  ".login.v1.CommonHeaderReq\022\013\n\003cmd\030\002 \001(\t\022\n"
+  "\n\002f1\030\003 \001(\t\022\n\n\002f2\030\004 \001(\t\"P\n\tAdminResp\0223\n\006h"
+  "eader\030\001 \001(\0132#.protocol.login.v1.CommonHe"
+  "aderResp\022\016\n\006result\030\002 \001(\t2\226\003\n\010LoginAPI\022M\n"
+  "\010Register\022\036.protocol.login.v1.RegisterRe"
+  "q\032\037.protocol.login.v1.RegisterResp\"\000\022F\n\005"
+  "Login\022\033.protocol.login.v1.LoginReq\032\034.pro"
+  "tocol.login.v1.LoginResp\"\0000\001\022b\n\017UpdateBa"
+  "sicInfo\022%.protocol.login.v1.UpdateBasicI"
+  "nfoReq\032&.protocol.login.v1.UpdateBasicIn"
+  "foResp\"\000\022G\n\006Logout\022\034.protocol.login.v1.L"
+  "ogoutReq\032\035.protocol.login.v1.LogoutResp\""
+  "\000\022F\n\007AdminOp\022\033.protocol.login.v1.AdminRe"
+  "q\032\034.protocol.login.v1.AdminResp\"\000b\006proto"
+  "3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_login_2eproto_deps[1] = {
 };
@@ -539,7 +541,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_log
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_login_2eproto_once;
 static bool descriptor_table_login_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_login_2eproto = {
-  &descriptor_table_login_2eproto_initialized, descriptor_table_protodef_login_2eproto, "login.proto", 1906,
+  &descriptor_table_login_2eproto_initialized, descriptor_table_protodef_login_2eproto, "login.proto", 1921,
   &descriptor_table_login_2eproto_once, descriptor_table_login_2eproto_sccs, descriptor_table_login_2eproto_deps, 15, 0,
   schemas, file_default_instances, TableStruct_login_2eproto::offsets,
   file_level_metadata_login_2eproto, 15, file_level_enum_descriptors_login_2eproto, file_level_service_descriptors_login_2eproto,
@@ -1712,6 +1714,10 @@ RegisterResp::RegisterResp(const RegisterResp& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
+  token_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_token().empty()) {
+    token_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.token_);
+  }
   if (from._internal_has_header()) {
     header_ = new ::protocol::login::v1::CommonHeaderResp(*from.header_);
   } else {
@@ -1722,6 +1728,7 @@ RegisterResp::RegisterResp(const RegisterResp& from)
 
 void RegisterResp::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RegisterResp_login_2eproto.base);
+  token_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   header_ = nullptr;
 }
 
@@ -1731,6 +1738,7 @@ RegisterResp::~RegisterResp() {
 }
 
 void RegisterResp::SharedDtor() {
+  token_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete header_;
 }
 
@@ -1749,6 +1757,7 @@ void RegisterResp::Clear() {
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
 
+  token_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (GetArenaNoVirtual() == nullptr && header_ != nullptr) {
     delete header_;
   }
@@ -1767,6 +1776,15 @@ const char* RegisterResp::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
       case 1:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
+          CHK_(ptr);
+        } else goto handle_unusual;
+        continue;
+      // string token = 2;
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+          auto str = _internal_mutable_token();
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "protocol.login.v1.RegisterResp.token"));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -1804,6 +1822,16 @@ failure:
         1, _Internal::header(this), target, stream);
   }
 
+  // string token = 2;
+  if (this->token().size() > 0) {
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+      this->_internal_token().data(), static_cast<int>(this->_internal_token().length()),
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
+      "protocol.login.v1.RegisterResp.token");
+    target = stream->WriteStringMaybeAliased(
+        2, this->_internal_token(), target);
+  }
+
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
         _internal_metadata_.unknown_fields(), target, stream);
@@ -1819,6 +1847,13 @@ size_t RegisterResp::ByteSizeLong() const {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
   (void) cached_has_bits;
+
+  // string token = 2;
+  if (this->token().size() > 0) {
+    total_size += 1 +
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+        this->_internal_token());
+  }
 
   // .protocol.login.v1.CommonHeaderResp header = 1;
   if (this->has_header()) {
@@ -1858,6 +1893,10 @@ void RegisterResp::MergeFrom(const RegisterResp& from) {
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   (void) cached_has_bits;
 
+  if (from.token().size() > 0) {
+
+    token_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.token_);
+  }
   if (from.has_header()) {
     _internal_mutable_header()->::protocol::login::v1::CommonHeaderResp::MergeFrom(from._internal_header());
   }
@@ -1884,6 +1923,8 @@ bool RegisterResp::IsInitialized() const {
 void RegisterResp::InternalSwap(RegisterResp* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
+  token_.Swap(&other->token_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+    GetArenaNoVirtual());
   swap(header_, other->header_);
 }
 

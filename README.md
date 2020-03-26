@@ -130,6 +130,7 @@ message RegisterReq {
 // Register Response
 message RegisterResp {
     CommonHeaderResp header = 1;
+    string token = 2;
 }
 
 // Login Request
@@ -234,7 +235,6 @@ service LoginAPI {
 
 
 ```sql
-DROP TABLE IF EXISTS `user_register_tab`;
 CREATE TABLE `user_register_tab` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_name` varchar(16) NOT NULL,
@@ -262,7 +262,6 @@ CREATE TABLE `user_basic_tab` (
   UNIQUE KEY `idx_uniq_name` (`user_name`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `user_secure_tab`;
 CREATE TABLE `user_secure_tab` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_name` varchar(16) NOT NULL,
@@ -276,7 +275,6 @@ CREATE TABLE `user_secure_tab` (
   UNIQUE KEY `idx_uniq_phone` (`phone_number`) USING BTREE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
-DROP TABLE IF EXISTS `user_login_tab`;
 CREATE TABLE `user_login_tab` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `user_name` varchar(16) NOT NULL,
@@ -426,7 +424,7 @@ Bazel: 2.2.0, 编译时需加选项 `--cxxopt='-std=c++17'`
 
 ## 操作
 
-操作可以参考前面的录屏示例。`login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作。
+操作可以参考前面的录屏示例。注意到 `Register` 成功后会返回 `token`，这个在录屏中没有体现，现已更新。 `login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作。
 
 注意：
 
@@ -466,3 +464,18 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 |          update   user_name    eg: mock update isaac                         |
 --------------------------------------------------------------------------------
 ```
+
+## 一些问题
+
+* 运行时，需关闭本地代理([issue](https://github.com/grpc/grpc/issues/9989))；
+* 添加 `mysql` 的 `mysqlclient` 依赖在 `Mac` 下一直添加不上，可能是当前的 `MacOS` 下系统包含路径不对，通过这里的方法来[解决](https://stackoverflow.com/questions/58908156/why-bazel-not-search-system-include-paths)；
+* MacOS 下用 std::chrono 相关的接口(`time_since_epoch`)获取当前时间戳，似乎有点[问题](https://stackoverflow.com/questions/45882606/why-does-clang-g-not-giving-correct-microseconds-output-for-chronohigh-res?noredirect=1&lq=1)（`time.hpp`）,不过这个不影响实验；
+* `protobuf` 的 `MessageToJsonString` 函数在转换 `proto` 为 `JSON` 时，`uint64` 类型的值会被[转为字符串](https://github.com/protocolbuffers/protobuf/issues/2679)；
+* protoc 本地生成的 cpp 文件和 Bazel 里生成的可能会因为版本不一致出现不兼容[问题](https://github.com/protocolbuffers/protobuf/issues/7137
+)
+
+## 后续
+
+1. 请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
+2. 请求字段校验用 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
+3. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)。

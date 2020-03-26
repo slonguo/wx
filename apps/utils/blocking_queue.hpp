@@ -15,6 +15,12 @@ namespace utils
 // https://stackoverflow.com/questions/19143228/creating-a-standard-map-that-is-thread-safe
 // https://stackoverflow.com/questions/30586932/unable-to-add-elements-to-thread-safe-locking-queue-of-shared-pointers
 
+using std::move;
+using std::scoped_lock;
+using std::unique_lock;
+using std::mutex;
+using std::condition_variable;
+
 template <typename T, typename Container = std::queue<T>>
 class BlockingQueue
 {
@@ -23,8 +29,8 @@ public:
     using value_type = typename Container::value_type;
     using reference = typename Container::reference;
     using const_reference = typename Container::const_reference;
-    using mutex_type = std::mutex;
-    using cv_type = std::condition_variable;
+    using mutex_type = mutex;
+    using cv_type = condition_variable;
 
 public:
     BlockingQueue() = default;
@@ -33,23 +39,23 @@ public:
 
     void pop(reference val)
     {
-        std::unique_lock<mutex_type> lock(mutex_);
+        unique_lock<mutex_type> lock(mutex_);
         cond_.wait(lock, [this] { return !queue_.empty(); });
-        val = std::move(queue_.front());
+        val = move(queue_.front());
         queue_.pop();
     }
 
     void push(const value_type &val)
     {
-        std::scoped_lock<mutex_type> lock(mutex_);
+        scoped_lock<mutex_type> lock(mutex_);
         queue_.push(val);
         cond_.notify_one();
     }
 
     void push(value_type &&val)
     {
-        std::scoped_lock<mutex_type> lock(mutex_);
-        queue_.push(std::move(val));
+        scoped_lock<mutex_type> lock(mutex_);
+        queue_.push(move(val));
         cond_.notify_one();
     }
 
