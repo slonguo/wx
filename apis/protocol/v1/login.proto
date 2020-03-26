@@ -1,0 +1,128 @@
+syntax = "proto3";
+
+package protocol.login.v1;
+
+// Common Request Header
+message CommonHeaderReq {
+    string user_name = 1;
+    string token = 2;
+    uint64 stamp = 3;
+}
+
+// Common Response Header
+message CommonHeaderResp {
+    uint32 code = 1;
+    string message = 2;
+}
+
+// DeviceInfo definitions
+message DeviceInfo {
+    // system_type can be: iOS, Android, Windows, MacOS, Linux, Web etc.
+    uint32 system_type = 1;
+
+    // device_type can be iPhone X, Huawei P30, Xiaomi 10 etc.
+    uint32 device_type = 2;
+
+    // channel_type can be App Store, Google Play, Mi Store etc.
+    uint32 channel_type = 3;
+
+    // device_name is the name set by the user, like: Ricky Gervais
+    string device_name = 4;
+
+    // device_id is the unique identifier of the device.
+    string device_id = 5;
+}
+
+// Register Request
+message RegisterReq {
+    CommonHeaderReq header = 1;
+    string phone_number = 2;
+
+    DeviceInfo device_info = 3;
+    string sign = 4;
+}
+
+// Register Response
+message RegisterResp {
+    CommonHeaderResp header = 1;
+}
+
+// Login Request
+message LoginReq {
+    CommonHeaderReq header = 1;
+    uint32 login_type = 2;
+    DeviceInfo device_info = 3;
+    string sign = 4;
+}
+
+// Login Response
+message LoginResp {
+    message MessageItem {
+        uint32 msg_type = 1;
+        string content = 2;
+    }
+
+    CommonHeaderResp header = 1;
+    repeated MessageItem messages = 2;
+}
+
+// Basic Info
+message BasicInfoItem {
+    string user_name = 1;
+    string user_nick = 2;
+    uint32 gender = 3;
+    string avatar = 4;
+    string signature = 5;
+}
+
+// Basic Info Update Request
+message UpdateBasicInfoReq {
+    CommonHeaderReq header = 1;
+    BasicInfoItem info = 2;
+}
+
+// Basic Info Update Response
+message UpdateBasicInfoResp {
+    CommonHeaderResp header = 1;
+    BasicInfoItem info = 2;
+}
+
+// Logout Request
+message LogoutReq {
+    CommonHeaderReq header = 1;
+}
+
+
+// Logout Response
+message LogoutResp {
+   CommonHeaderResp header = 1;
+}
+
+// Admin Operations
+// Note: this exists mainly to facilitate testing.
+//       no validation operations(i.e. header check) are performed
+message AdminReq {
+    CommonHeaderReq header = 1;
+    // cmd can be: change config, send broadcast, mock data etc.
+    string cmd = 2; 
+    // f1 and f2 are placeholders. 
+    // The values can be subcommands or data or even empty
+    // They vary in line with the specific `cmd`s
+    string f1 = 3;
+    string f2 = 4;
+}
+
+message AdminResp {
+    CommonHeaderResp header = 1;
+    string result = 2;
+ }
+
+
+// Login API 
+service LoginAPI {
+    rpc Register(RegisterReq) returns (RegisterResp){}
+    rpc Login(LoginReq) returns (stream LoginResp){}
+    rpc UpdateBasicInfo(UpdateBasicInfoReq) returns (UpdateBasicInfoResp){}
+    rpc Logout(LogoutReq) returns (LogoutResp){}
+    rpc AdminOp(AdminReq) returns (AdminResp){}
+}

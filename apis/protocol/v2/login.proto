@@ -1,0 +1,156 @@
+syntax = "proto3";
+
+import "google/api/annotations.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+import "validate/validate.proto";
+
+
+
+package protocol.login.v1;
+
+// Common Request Header
+message CommonHeaderReq {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        json_schema: {
+            required: ["user_name","token", "stamp"]
+        }
+    };
+    string user_name = 1 [(validate.rules).string = {
+        pattern:   "^\\w*$",
+        max_bytes: 16,
+     }];
+    string token = 2 [(validate.rules).string = {
+        pattern:   "^\\w*$",
+        len: 64,
+     }];
+
+     uint64 stamp = 3;
+}
+
+// Common Response Header
+message CommonHeaderResp {
+    uint32 code = 1;
+    string message = 2;
+}
+
+// DeviceInfo definitions
+message DeviceInfo {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        json_schema: {
+            required: ["system_type","device_type","channel_type","device_name","device_id"]
+        }
+    };
+
+    // system_type can be: iOS, Android, Windows, MacOS, Linux, Web etc.
+    uint32 system_type = 1 [(validate.rules).uint32 = {gte: 0, lte: 10}];
+
+    // device_type can be iPhone X, Huawei P30, Xiaomi 10 etc.
+    uint32 device_type = 2 [(validate.rules).uint32 = {gte: 0, lte: 100000}];
+
+    // channel_type can be App Store, Google Play, Mi Store etc.
+    uint32 channel_type = 3 [(validate.rules).uint32 = {gte: 0, lte: 1000}];
+
+    // device_name is the name set by the user, like: Ricky Gervais
+    string device_name = 4 [(validate.rules).string = {
+        max_bytes: 64,
+     }];
+
+    // device_id is the unique identifier of the device.
+    string device_id = 5 [(validate.rules).string = {
+        pattern:   "^\\w*$",
+        max_bytes: 64,
+     }];
+}
+
+// Register Request
+message RegisterReq {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        json_schema: {
+            required: ["header","phone_number","device_info", "sign"]
+        }
+    };
+
+
+    CommonHeaderReq header = 1;
+
+    string phone_number = 2 [(validate.rules).string = {
+        pattern:   "^\\d*$",
+        len: 11,
+     }];
+
+    DeviceInfo device_info = 3;
+    string sign = 4 [(validate.rules).string = {
+        pattern:   "^\\w*$",
+        len: 32,
+     }];
+}
+
+// Register Response
+message RegisterResp {
+    CommonHeaderResp header = 1;
+}
+
+// Login Request
+message LoginReq {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        json_schema: {
+            required: ["header","login_type","device_info", "sign"]
+        }
+    };
+
+    CommonHeaderReq header = 1;
+    uint32 login_type = 2 [(validate.rules).uint32 = {gte: 0, lte: 10}];
+    DeviceInfo device_info = 3;
+    string sign = 4;
+}
+
+// Login Response
+message LoginResp {
+    message MessageItem {
+        int32 msg_type = 1;
+        string content = 2;
+    }
+
+    CommonHeaderResp header = 1;
+    repeated MessageItem messages = 2;
+}
+
+// Logout Request
+message LogoutReq {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+        json_schema: {
+            required: ["header"]
+        }
+    };
+    CommonHeaderReq header = 1;
+}
+
+
+// Logout Response
+message LogoutResp {
+   CommonHeaderResp header = 1;
+}
+
+// Login API 
+service LoginAPI {
+
+    rpc Register(RegisterReq) returns (RegisterResp){
+        option (google.api.http) = {
+            post: "/v1/register",
+            body: "*"
+        };
+    }
+    rpc Login(LoginReq) returns (stream LoginResp){
+        option (google.api.http) = {
+            post: "/v1/login",
+            body: "*"
+        };
+    }
+    rpc Logout(LogoutReq) returns (LogoutResp){
+        option (google.api.http) = {
+            post: "/v1/logout",
+            body: "*"
+        };
+    }
+
+}
