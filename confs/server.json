@@ -1,6 +1,6 @@
 {
     "server": {
-        "endpoint": "127.0.0.1:12345",
+        "endpoint": "127.0.0.1:12345"
     },
     "admin": {
         "kick_mode": 1

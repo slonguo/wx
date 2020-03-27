@@ -6,14 +6,14 @@ void to_json(json &j, const SvrConfig &sc)
 {
     j = json{
         {"endpoint", sc.endpoint},
-        {"health_key", sc.healthKey},
+        // {"health_key", sc.healthKey},
     };
 }
 
 void from_json(const json &j, SvrConfig &sc)
 {
     j.at("endpoint").get_to(sc.endpoint);
-    j.at("health_key").get_to(sc.healthKey);
+    // j.at("health_key").get_to(sc.healthKey);
 }
 
 void to_json(json &j, const AdminConfig &ac)

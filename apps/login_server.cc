@@ -92,7 +92,8 @@ public:
         }
         LOG_F(INFO, "req fields check ok");
 
-        string userName = req->header().user_name();
+        string userName(req->header().user_name());
+        string phoneNumber(req->phone_number());
         UserSecureInfo usi;
 
         if (Dao::Instance().GetUserSecureInfo(userName, usi))
@@ -102,8 +103,7 @@ public:
             return Status::OK;
         }
 
-
-        string phoneNumber(req->phone_number());
+        LOG_F(INFO, "user name %s not registered, check phone %s", userName.c_str(), phoneNumber.c_str());
         if (Dao::Instance().GetUserSecureInfoByPhone(phoneNumber, usi))
         {
             SetCommonHeaderResp(header, RespCode::User_Already_Registered);
@@ -111,7 +111,7 @@ public:
             return Status::OK;
         }
 
-        LOG_F(INFO, "phone number %s not registered, start registering..", phoneNumber.c_str());
+        LOG_F(INFO, "phone number %s and user name %s not registered, start registering...", userName.c_str(), phoneNumber.c_str());
         if (!Dao::Instance().AddRegisterInfo(req))
         {
             LOG_F(INFO, "internal db op failed.request:\n%s", jsonP.c_str());
@@ -279,6 +279,8 @@ public:
 
         string dest;
         CommonHeaderResp header;
+        SetCommonHeaderResp(header, RespCode::OK);
+
         if (!login::validHeaderReq(req->header(), dest))
         {
             LOG_F(INFO, "request invalid");
@@ -305,6 +307,8 @@ public:
 
         string dest;
         CommonHeaderResp header;
+        SetCommonHeaderResp(header, RespCode::OK);
+
 
         if (!login::validHeaderReq(req->header(), dest))
         {
@@ -327,6 +331,8 @@ public:
         string jsonP;
         MessageToJsonString(*req, &jsonP, options);
         LOG_F(INFO, "admin request:\n%s", jsonP.c_str());
+        CommonHeaderResp header;
+        SetCommonHeaderResp(header, RespCode::OK);
 
         string msg = req->cmd();
         string f1 = req->f1();

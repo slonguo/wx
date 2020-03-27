@@ -53,7 +53,7 @@ public:
     bool AddRegisterInfo(const RegisterReq *req);
     bool GetUserBasicInfo(string userName, UserBasicInfo &ubi);
     bool GetUserSecureInfo(string userName, UserSecureInfo &usi);
-    bool GetUserSecureInfoByPhone(string userName, UserSecureInfo usi);
+    bool GetUserSecureInfoByPhone(string userName, UserSecureInfo &usi);
     bool GetUserLastLoginInfo(string userName, UserLoginInfo &uli);
     bool UpdateUserBasicInfo(string userName, const BasicInfoItem &ubi);
     bool AddLoginInfo(const LoginReq *req);

@@ -3,7 +3,7 @@
 
 ## 问题
 
-终端登录设计：1）可注册登录；2） 同时只能在一台设备登录，根据管理策略管理设备踢出情况；3）C++、gRPC实现，bazel编译管理依赖，考虑数据、传输等安全
+终端登录设计：1）可注册登录；2） 同时只能在一台设备登录，根据管理策略管理设备踢出情况；3）`C++`、`gRPC` 实现，`Bazel` 编译管理依赖，考虑数据、传输等安全
 
 
 
@@ -27,9 +27,7 @@
 
 操作可参考这里：
 
-[![asciicast](https://asciinema.org/a/313586.svg)](https://asciinema.org/a/313586)
-
-
+[![asciicast](https://asciinema.org/a/313861.svg)](https://asciinema.org/a/313861)
 
 `server` 的主要模块说明如下：
 
@@ -319,9 +317,10 @@ CREATE TABLE `user_login_tab` (
 由于主要是实验性质，所以并没有依赖安全相关的重操作，但是在设计上，有这方面的考虑。
 
 * 用户数据表分安全信息和基本信息，安全信息中包含用户密码和手机号，原则上，密码需采用破解难度高的加密库（如`bcrypt`）,同时这个表最好置于另一个访问权限高的数据库中，通过专门的 `RPC` 服务调用。本次操作中，只取了 `md5` 码，同基本信息表置于同一数据库中直接访问数据库得到。
-* 用户注册后，会返回 `token`，在随后的操作中，都会带着 `token` 来操作。但是不同的操作对 `token` 的安全等级不尽相同，因此对同一 `token` 也可能有不同的等级的鉴定。理想的方式是加密了些关键参数（如时间戳、系统类型），在需要调整安全等级时，虽然数据库没存储具体值，但是可以根据相关字段反解。（见上面对 `CommonHeaderReq` 的说明）
-* 用户输入校验，对注册和请求做签名校验（见上面说明）。对每个具体字段的长度，大小，格式等，这里没有做校验，后续可以参考 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
-* 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)
+* 用户注册后，会返回 `token`，在随后的操作中，都会带着 `token` 来操作。但是不同的操作对 `token` 的安全等级不尽相同，因此对同一 `token` 也可能有不同的等级的鉴定。理想的方式是加密了些关键参数（如时间戳、系统类型），在需要调整安全等级时，虽然数据库没存储具体值，但是可以根据相关字段反解。（见上面对 `CommonHeaderReq` 的说明）。
+* 用户输入校验，对注册和请求做签名校验（见上面说明）。对每个具体字段的长度，大小，格式等，这里没有做校验，后续可以参考 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)。
+* 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)。
+* 由于对配置项添加了脱敏处理（`to_json`），打印日志时不会打出具体的 `MySQL` 账号密码等配置。
 
 ## 代码组织
 
@@ -424,9 +423,50 @@ Bazel: 2.2.0, 编译时需加选项 `--cxxopt='-std=c++17'`
 
 ## 操作
 
-操作可以参考前面的录屏示例。注意到 `Register` 成功后会返回 `token`，这个在录屏中没有体现，现已更新。 `login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作。
 
-注意：
+首先需要配置对应的数据库和服务器，配置可见 `confs` 目录。对配置文件的说明如下：
+
+配置里的对象全部可以 `JSON` 对象序列化和反序列化，关联的 `JSON` 字段见 `defs.hpp` 和 `connect_options_jsonify.hpp`，除了 `DB` 连接选项外，其他字段都是必选字段。
+
+```json
+{
+    // server 配置
+    "server": {
+        "endpoint": "127.0.0.1:12345"
+    },
+
+    // admin 配置，这里可以动态更新，比如多终端登录时踢出模式配置，token 校验等级配置等
+    "admin": {
+        "kick_mode": 1
+    },
+
+    // db 配置，db 连接选项做了 json 序列化/反序列化
+    "db": {
+        "conn":{
+            "server": "127.0.0.1",
+            "port": 3306,
+            "username": "root",
+            "password": "passwd",
+            "dbname": "login_db"
+        },
+        "pool_size": 10
+    },
+
+    // log 配置
+    "log": {
+        "file_name": "login.log",
+        "file_mode": 0,
+        "level": 0,
+        "verbosity": 1
+    }
+}
+```
+
+操作可以参考前面的录屏示例。 `login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作，连接的时候需要注意看环境变量中是否有 `http_proxy`，如果有需要清理一下。
+
+注意到：`register` 成功后，会返回一个 `token`。原则上，后续的操作都需要带这个 `token` 来校验。但实验中为了方便，没有取数据库里登录记录中的登录时间和系统类型，而是通过 `mock` 操作取当前时间和随机系统类型生成了 `token` 来校验。这就关联到了上面安全里说的 `token` 根据配置的安全校验等级来判断是否需要深度校验的问题。测试中跳过了这一环节，实操中可以在配置里的 `admin` 下添加一个 `token_check_level` 选项来控制。另外这里的 `token` 编码比较简单，后半部分可以直接看出来是做了转十六进制处理，实际中需要高级些的加解密方式。
+
+`help` 命令：
 
 对 `client`:
 
@@ -469,9 +509,9 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 
 * 运行时，需关闭本地代理([issue](https://github.com/grpc/grpc/issues/9989))；
 * 添加 `mysql` 的 `mysqlclient` 依赖在 `Mac` 下一直添加不上，可能是当前的 `MacOS` 下系统包含路径不对，通过这里的方法来[解决](https://stackoverflow.com/questions/58908156/why-bazel-not-search-system-include-paths)；
-* MacOS 下用 std::chrono 相关的接口(`time_since_epoch`)获取当前时间戳，似乎有点[问题](https://stackoverflow.com/questions/45882606/why-does-clang-g-not-giving-correct-microseconds-output-for-chronohigh-res?noredirect=1&lq=1)（`time.hpp`）,不过这个不影响实验；
+* `MacOS` 下用 `std::chrono` 相关的接口(`time_since_epoch`)获取当前时间戳，似乎有点[问题](https://stackoverflow.com/questions/45882606/why-does-clang-g-not-giving-correct-microseconds-output-for-chronohigh-res?noredirect=1&lq=1)（`time.hpp`）,不过这个不影响实验；
 * `protobuf` 的 `MessageToJsonString` 函数在转换 `proto` 为 `JSON` 时，`uint64` 类型的值会被[转为字符串](https://github.com/protocolbuffers/protobuf/issues/2679)；
-* protoc 本地生成的 cpp 文件和 Bazel 里生成的可能会因为版本不一致出现不兼容[问题](https://github.com/protocolbuffers/protobuf/issues/7137
+* `protoc` 本地生成的 `cpp` 文件和 `Bazel` 里生成的可能会因为版本不一致出现不兼容[问题](https://github.com/protocolbuffers/protobuf/issues/7137
 )
 
 ## 后续

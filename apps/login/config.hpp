@@ -34,7 +34,7 @@ using utils::DBConfig;
 struct SvrConfig
 {
     string endpoint;
-    string healthKey;
+    // string healthKey;
 };
 
 void to_json(json &j, const SvrConfig &sc);

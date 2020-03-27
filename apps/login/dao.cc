@@ -87,7 +87,7 @@ bool Dao::GetUserBasicInfo(string userName, UserBasicInfo &ubi)
 bool Dao::GetUserSecureInfo(string userName, UserSecureInfo &usi)
 {
     shared_ptr<connection> conn = cp_.get();
-    auto res = conn->query("select user_name, select phone_number, passwd, status from user_secure_tab where user_name = \"%s\" limit 1", userName.c_str());
+    auto res = conn->query("select user_name, phone_number, passwd, status from user_secure_tab where user_name = \"%s\" limit 1", userName.c_str());
     if (!res.is_empty())
     {
         res.fetch(usi.userName, usi.phoneNumber, usi.passwd, usi.status);
@@ -97,7 +97,7 @@ bool Dao::GetUserSecureInfo(string userName, UserSecureInfo &usi)
     return !res.is_empty();
 }
 
-bool Dao::GetUserSecureInfoByPhone(string phoneNumber, UserSecureInfo usi)
+bool Dao::GetUserSecureInfoByPhone(string phoneNumber, UserSecureInfo &usi)
 {
     LOG_F(INFO, "begin GetUserSecureInfoByPhone. phone:%s", phoneNumber.c_str());
     shared_ptr<connection> conn = cp_.get();
