@@ -446,9 +446,9 @@ clean:
 	bazel clean
 ```
 
-注意到由于上面提到的代码组织的模式，对 `proto` 文件需要本地编译（`build_proto.sh`），这就需要本地编译安装 `protoc` 和关联的 `grpc_cpp_plugin` 插件。如果需要协议字段检查或 `HTTP` 转 `gRPC` 或根据协议生成 `Swagger` 文档注释，需要另安装类似 `protoc-gen-validate` 和 `grpc-gateway` 生态相关的插件（这两个目前对 `C++` 支持其实也不是特别完善）。
+注意到由于上面提到的代码组织的模式，对 `proto` 文件需要本地编译（`build_proto.sh`），这就需要本地编译安装 `protoc` 和关联的 `grpc_cpp_plugin` 插件。如果需要协议字段检查或 `HTTP` 转 `gRPC` 或根据协议生成 `Swagger` 文档注释，需要另安装类似 `protoc-gen-validate` 和 `grpc-gateway` 生态相关的插件（这两个目前对 `Golang` 和 `Python` 支持较好，对 `C++` 支持不是很完善）。
 
-本实验中由于已上传了相关的 `proto` 生成文件，所以不需依赖 `protoc` 链，直接 `make build` 就可以。
+本实验中由于已上传了相关的 `proto` 生成文件，所以不需依赖 `protoc` 链，直接 `make build` 即可。
 
 ### 三方依赖
 
@@ -466,13 +466,13 @@ clean:
 
 在使用 `mysql modern cpp` 过程中，出现或调整了以下几个问题：
 
-* 没有事务支持（对应注册用户时写三张表的操作），这个暂时无解
+* 没有事务支持（对应注册用户时写三张表的操作），这个暂时没解决
 * 编译时开启了 `NO_STD_OPTIONAL`，虽然实验中已开启 `c++17` 参数，但编译这个依赖的时候还是会有大量报错，所以开启了这个宏
 * 添加了对 `connect_options` 的 `JSON` 序列化/反序列化处理（`conn_options_jsonify.hpp`）
 * 头文件依赖调整
 * `MySQL` 8.x 中移除了 `my_bool` 类型，这里做了修改
 * 编译时 `std::move` 的调整
-* `prepared_statement` 预处理时查询结果似乎有问题，查询还是用 `query` 稳妥
+* `prepared_statement` 预处理时查询结果似乎有问题，查询用 `query` 接口安全些
 
 ## 操作
 
@@ -566,13 +566,13 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 * `MacOS` 下用 `std::chrono` 相关的接口(`time_since_epoch`)获取当前时间戳，似乎有点[问题](https://stackoverflow.com/questions/45882606/why-does-clang-g-not-giving-correct-microseconds-output-for-chronohigh-res?noredirect=1&lq=1)（`time.hpp`）,不过这个不影响实验；
 * `protobuf` 的 `MessageToJsonString` 函数在转换 `proto` 为 `JSON` 时，`uint64` 类型的值会被[转为字符串](https://github.com/protocolbuffers/protobuf/issues/2679)；
 * `protoc` 本地生成的 `cpp` 文件和 `Bazel` 里生成的可能会因为版本不一致出现不兼容[问题](https://github.com/protocolbuffers/protobuf/issues/7137
-)
+)。
 
 ## 扩展
 
 1. 阻塞队列替换为持久化等效果更好的常用的中间件；
 2. 消息较多时，批量推送（`login.proto`的定义中消息已是`repeated`）；
-3. （gRPC）请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
+3. （`gRPC`）请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
 4. 请求字段校验用 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
-5. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)。
-6. 编译环境打包
+5. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)；
+6. 编译环境和依赖 `docker` 打包。
