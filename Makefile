@@ -14,6 +14,6 @@ build:
 all: proto build
 
 clean:
-	# cd ./apis && rm -rf ./cpp ./golang ./docs
+	rm -rf ./apis/cpp/*
 	rm -f *.log
 	bazel clean

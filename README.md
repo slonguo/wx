@@ -1,5 +1,20 @@
+- [问题](#--)
+- [设计](#--)
+  * [组件和模块](#-----)
+  * [数据流](#---)
+  * [接口和协议](#-----)
+  * [库表设计](#----)
+  * [安全性](#---)
+  * [代码组织](#----)
+- [编译](#--)
+  * [本地环境](#----)
+  * [三方依赖](#----)
+- [操作](#--)
+- [一些问题](#----)
+- [后续](#--)
 
-<!-- TOC -->
+
+
 
 ## 问题
 
@@ -9,7 +24,7 @@
 
 ## 设计
 
-
+### 组件和模块
 
 分三个模块：
 
@@ -48,21 +63,22 @@
 
 * `Mock` 数据供客户端的各命令测试，由于做了签名校验，手动配置会麻烦，所以后端生成；
 * 配置查看与设置（`config`），比如设置踢出模式、`token` 校验等级等；
-* 服务端的 `metrics` 相关暴露（`inspect`），比如查询 `hub` 中活跃流数、连接池的数据情况等；
+* 服务端的 `metrics` 相关暴露（`inspect`），比如查询 `Hub` 中活跃流数、连接池的数据情况等；
 * 获取用户基本信息（`getuser`）接口，查看操作中数据是否存在或是否更新；
 * 广播（`broadcast`），其实也是为了测试流推送情况。
 
 ### 数据流
 
-1. 用户与 `client` 端交互时，采用 `命令 JSON包体` 的格式，`client` 与 `server` 交互采用`grpc/protobuf`;
+1. 用户与 `client` 端交互时，采用 `命令 JSON包体` 的格式，`client` 解析 `JSON` 包体并转为 `protobuf` 格式， `client` 与 `server` 交互采用 `grpc/protobuf`;
 
 2. 用户与 `admin` 端交互时，采用 `命令 子命令1/数据1 子命令2/数据2 ` 的格式，其中后面两个参数根据具体的命令可选。`admin` 与 `server` 交互采用 `grpc/protobuf`
 
 由于 `Protobuf` 中定义的字段比较多，输入也不便，所以采用输入为 `JSON` 包体、`client` 将其转为 `protobuf` 格式再与 `server` 交互。另外由于做了一些签名校验，手动输入也会不大方便，所以`admin` 端提供了 `client` 端所有命令的即时 `mock` 数据,方便测试。
 
+`client` 和 `admin` 收到 `server` 返回，以及 `server` 收到 `client` 和 `admin` 的请求，都做了转 `JSON` 输出，方便查看。 
 
 
-## 接口和协议
+### 接口和协议
 
 
 
@@ -70,13 +86,14 @@
 
 1. 每个请求都会带这个字段。`token` 是64位，对 `stamp` 是毫秒级时间戳。
 2. 对注册请求，`token = md5(密码)+md5(验证码)`，实验中为方便测试，`mock` 数据生成的密码和验证码对应手机号中的中间四位和后四位。
-3. 对非注册请求，`token = md5(src+key)+bin2hex(src)`, 其中 `src` 为 `systemType + timestamp` 组成的16位对其的字符串, `key` 为 `user_name`, 其中 `systemType` 定义见 `defs.hpp`，不超过8，`timestamp` 为毫秒级13位，填充16位没问题。即可以通过 `header` 直接校验 `token` 是否有效。在安全等级较高的情况下，由于 `timestamp` 和 `systemType` 等信息都存储在登录信息表中，也可以通过表中字段合成来校验。
+3. 对非注册请求，`token = md5(src+key)+bin2hex(src)`, 其中 `src` 为 `systemType + timestamp` 组成的16位对其的字符串, `key` 为 `user_name`, 其中 `systemType` 定义见 `defs.hpp`，数值不超过8，`timestamp` 为毫秒级13位，这两字段填充16位没问题。即可以通过 `header` 直接校验 `token` 是否有效。在安全等级较高的情况下，由于 `timestamp` 和 `systemType` 等信息都存储在登录信息表中，也可以通过表中字段合成来校验，免去存缓存。
 
-对注册请求和登录请求，都会有一个签名校验，这个值为前面定义的所有字段的值转为字符串按序拼接成的长串的 `md5` 值。
+
+对注册请求和登录请求，都会有一个签名校验，这个值为前面定义的所有字段的值转为字符串按序拼接成的长串的 `md5` 值。`header` 里面的 `stamp` 一是可以做幂等处理，另外也可和反解后的 `token` 里面的时间做比较，在安全性高的校验中可能会用到。
 
 对 `CommonHeaderResp`，`code` 可参考 `defs.hpp` 中的枚举定义，`message` 为枚举值对应的字符串。
 
-登录成功后的返回为 `stream` 类型的 `LoginResp`，对 `LoginResp`, 可以有多种类型的消息推送，这里做了个抽象，`msg_type` 为可推送的消息类型（用户信息更新，接收广播信息，朋友圈更新，联系人更新，在另一台设备登录后被踢出等），`content` 字段比较灵活，可以是 `JSON` 包体。
+登录成功后的返回为 `stream` 类型的 `LoginResp`，对 `LoginResp`, `messages` 为 `repeated` 类型，可以有多种类型的消息推送，这里做了个抽象，`msg_type` 为可推送的消息类型（用户信息更新，接收广播信息，朋友圈更新，联系人更新，在另一台设备登录后被踢出等），`content` 字段比较灵活，可以是 `JSON` 包体。当然这也是为了实验操作方便。考虑传输效率等，用 `Oneof` 可能会更合适，但这会涉及到每次新增消息类型时逻辑中要添加 `proto` 逻辑适配，相比起来 `JSON` 要方便些。
 
 
 
@@ -215,7 +232,7 @@ service LoginAPI {
 
 
 
-## 库表设计
+### 库表设计
 
 共四张表：
 
@@ -289,30 +306,7 @@ CREATE TABLE `user_login_tab` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 ```
 
-
-
-## 三方依赖
-
-除了`gRPC` 和 `protobuf`，还有以下依赖：
-
-* [JSON](https://github.com/nlohmann/json) , 对结构体的序列化和反序列化处理非常方便
-
-* [MD5](https://github.com/joyeecheung/md5)
-
-* [loguru](https://github.com/emilk/loguru)，日志库
-
-* [mysql modern cpp](https://github.com/daotrungkien/mysql-modern-cpp) `C++1x` 风格的 `MySQL` 包装。
-  
-在使用 `mysql modern cpp` 过程中，出现或调整了以下几个问题：
-
-* 没有事务支持（对应注册用户时写三张表的操作）
-* 添加了对 `connect_options` 的 `JSON` 序列化/反序列化处理（`conn_options_jsonify.hpp`）
-* 头文件依赖调整
-* `MySQL` 8.x 中移除了 `my_bool` 类型，这里做了修改
-* 编译时 `std::move` 的调整
-* `prepared_statement` 预处理时查询结果似乎有问题，查询还是用 `query` 稳妥
-
-## 安全性
+### 安全性
 
 由于主要是实验性质，所以并没有依赖安全相关的重操作，但是在设计上，有这方面的考虑。
 
@@ -322,11 +316,13 @@ CREATE TABLE `user_login_tab` (
 * 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)。
 * 由于对配置项添加了脱敏处理（`to_json`），打印日志时不会打出具体的 `MySQL` 账号密码等配置。
 
-## 代码组织
+### 代码组织
 
 
 
-代码组织如下：
+代码组织如下。设计上将 `proto` 文件目录和服务逻辑分离，并没有按照 `bazel` 教程将 `proto` 文件和代码放在一起。
+
+配置的时候，将 `proto` 文件通过 `protoc` 工具链来生成(`build_proto.sh`)，并且将生成的代码文件一起上库，这样操作主要是考虑到协议变更不频繁，对应语言的代码也一目了然，方便编辑器跳转。
 
 ```text
 .
@@ -406,13 +402,9 @@ CREATE TABLE `user_login_tab` (
 ```
 
 
+## 编译
 
-设计上将 `proto` 文件目录和服务逻辑分离，并没有按照 `bazel` 教程将 `proto` 文件和代码放在一起。
-
-配置的时候，将 `proto` 文件通过 `protoc` 工具链来生成，将生成的代码文件一起上库，这样的操作主要是考虑到协议变更不频繁，对应语言的代码也一目了然，方便开发时参考。
-
-## 编译环境
-
+### 本地环境
 ```
 MacOS 10.15.3 (19D76)
 
@@ -420,6 +412,56 @@ clang：Apple clang version 11.0.0 (clang-1100.0.33.17)
 
 Bazel: 2.2.0, 编译时需加选项 `--cxxopt='-std=c++17'`
 ```
+
+对编译做了个简单的 `Makefile` 包装：
+
+```makefile
+.PHONY: proto apis build all clean
+
+proto:
+	./build_proto.sh
+
+apis:
+	bazel build //apis:all
+
+build:
+	bazel build --cxxopt='-std=c++17' //apps:all
+
+all: proto build
+
+clean:
+	rm -rf ./apis/cpp/*
+	rm -f *.log
+	bazel clean
+```
+
+注意到由于上面提到的代码组织的模式，对 `proto` 文件需要本地编译（`build_proto.sh`），这就需要本地编译安装 `protoc` 和关联的 `grpc_cpp_plugin` 插件。如果需要协议字段检查或 `HTTP` 转 `gRPC` 或根据协议生成 `Swagger` 文档注释，需要另安装类似 `protoc-gen-validate` 和 `grpc-gateway` 生态相关的插件（这两个目前对 `C++` 支持其实也不是特别完善）。
+
+本实验中由于已上传了相关的 `proto` 生成文件，所以不需依赖 `protoc` 链，直接 `make build` 就可以。
+
+### 三方依赖
+
+除了`gRPC` 和 `protobuf`，还有以下依赖：
+
+* [JSON](https://github.com/nlohmann/json) , 对自定义结构体的序列化和反序列化处理非常方便（自定义 `to_json` 和 `from_json`）
+
+* [MD5](https://github.com/joyeecheung/md5)，`MD5` 处理
+
+* [loguru](https://github.com/emilk/loguru)，日志库
+
+* [mysql modern cpp](https://github.com/daotrungkien/mysql-modern-cpp) `C++1x` 风格的 `MySQL` 包装。
+  
+由于这几个依赖都轻量，所以直接复制到本地的 `3rd` 目录下并做了相应调整。没有用到重一些的加解密库，没有依赖缓存等组件。
+
+在使用 `mysql modern cpp` 过程中，出现或调整了以下几个问题：
+
+* 没有事务支持（对应注册用户时写三张表的操作），这个暂时无解
+* 编译时开启了 `NO_STD_OPTIONAL`，虽然实验中已开启 `c++17` 参数，但编译这个依赖的时候还是会有大量报错，所以开启了这个宏
+* 添加了对 `connect_options` 的 `JSON` 序列化/反序列化处理（`conn_options_jsonify.hpp`）
+* 头文件依赖调整
+* `MySQL` 8.x 中移除了 `my_bool` 类型，这里做了修改
+* 编译时 `std::move` 的调整
+* `prepared_statement` 预处理时查询结果似乎有问题，查询还是用 `query` 稳妥
 
 ## 操作
 
@@ -505,6 +547,7 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 --------------------------------------------------------------------------------
 ```
 
+
 ## 一些问题
 
 * 运行时，需关闭本地代理([issue](https://github.com/grpc/grpc/issues/9989))；
@@ -519,3 +562,4 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 1. 请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
 2. 请求字段校验用 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
 3. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)。
+4. 编译环境打包
