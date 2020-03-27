@@ -4,6 +4,7 @@
     * [组件和模块](#组件和模块)
     * [数据流](#数据流)
     * [接口和协议](#接口和协议)
+    * [错误码和结构体等定义](#错误码和结构体等定义)
     * [库表设计](#库表设计)
     * [安全性](#安全性)
     * [代码组织](#代码组织)
@@ -11,13 +12,15 @@
     * [本地环境](#本地环境)
     * [三方依赖](#三方依赖)
 * [操作](#操作)
-* [一些问题](#一些问题)
-* [后续](#后续)
+* [遇到的问题](#遇到的问题)
+* [扩展](#扩展)
 
 ## 问题
 
-终端登录设计：1）可注册登录；2） 同时只能在一台设备登录，根据管理策略管理设备踢出情况；3）`C++`、`gRPC` 实现，`Bazel` 编译管理依赖，考虑数据、传输等安全
-
+终端登录设计：
+* 可注册登录；
+* 同时只能在一台设备登录，根据管理策略管理设备踢出情况；
+* `C++`、`gRPC` 实现，`Bazel` 编译管理依赖，考虑数据、传输等安全
 
 
 ## 设计
@@ -92,6 +95,8 @@
 对 `CommonHeaderResp`，`code` 可参考 `defs.hpp` 中的枚举定义，`message` 为枚举值对应的字符串。
 
 登录成功后的返回为 `stream` 类型的 `LoginResp`，对 `LoginResp`, `messages` 为 `repeated` 类型，可以有多种类型的消息推送，这里做了个抽象，`msg_type` 为可推送的消息类型（用户信息更新，接收广播信息，朋友圈更新，联系人更新，在另一台设备登录后被踢出等），`content` 字段比较灵活，可以是 `JSON` 包体。当然这也是为了实验操作方便。考虑传输效率等，用 `Oneof` 可能会更合适，但这会涉及到每次新增消息类型时逻辑中要添加 `proto` 逻辑适配，相比起来 `JSON` 要方便些。
+
+登录目前只用 `token` 来登录，协议中已定义了 `login_type`，容易扩展，实验中忽略了 `login_type` 的校验，做了签名校验、`token` 有效性校验和用户存在性校验等。
 
 
 
@@ -228,7 +233,9 @@ service LoginAPI {
 
 ```
 
+### 错误码和结构体等定义
 
+相关的有 消息类型，返回码，设备系统类型、设备类型、渠道类型，登录类型，用户状态还有相关的结构体等等，定义都在 `defs.hpp` 中。
 
 ### 库表设计
 
@@ -320,7 +327,13 @@ CREATE TABLE `user_login_tab` (
 
 代码组织如下。设计上将 `proto` 文件目录和服务逻辑分离，并没有按照 `bazel` 教程将 `proto` 文件和代码放在一起。
 
+`proto` 做了版本的区分。
+
 配置的时候，将 `proto` 文件通过 `protoc` 工具链来生成(`build_proto.sh`)，并且将生成的代码文件一起上库，这样操作主要是考虑到协议变更不频繁，对应语言的代码也一目了然，方便编辑器跳转。
+
+`apps` 目录下，`utils` 和 `3rd` 为公用依赖，除了 `login`，其他的一些新增服务模块也可置于 `apps` 下。
+
+执行文件的 `main` 入口文件直接置于 `apps` 下，如当前 `login_client.cc`, `login_admin.cc` 和 `login_server.cc`。由于目前接口不多，所以也将具体执行类和 `main` 置于同一文件中。随着接口和逻辑复杂性的提高，应单独提取出执行类到具体的业务目录下。
 
 ```text
 .
@@ -502,7 +515,7 @@ clean:
 }
 ```
 
-操作可以参考前面的录屏示例。 `login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作，连接的时候需要注意看环境变量中是否有 `http_proxy`，如果有需要清理一下。
+操作可以参考前面的录屏示例。涵盖了所有的操作。 `login-client` 和 `login-admin` 不指定地址时，取的是 `127.0.0.1:12345`，之后直接输入 `help` 查看所支持的操作，连接的时候需要注意看环境变量中是否有 `http_proxy`，如果有需要清理一下。
 
 注意到：`register` 成功后，会返回一个 `token`。原则上，后续的操作都需要带这个 `token` 来校验。但实验中为了方便，没有取数据库里登录记录中的登录时间和系统类型，而是通过 `mock` 操作取当前时间和随机系统类型生成了 `token` 来校验。这就关联到了上面安全里说的 `token` 根据配置的安全校验等级来判断是否需要深度校验的问题。测试中跳过了这一环节，实操中可以在配置里的 `admin` 下添加一个 `token_check_level` 选项来控制。另外这里的 `token` 编码比较简单，后半部分可以直接看出来是做了转十六进制处理，实际中需要高级些的加解密方式。
 
@@ -546,7 +559,7 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 ```
 
 
-## 一些问题
+## 遇到的问题
 
 * 运行时，需关闭本地代理([issue](https://github.com/grpc/grpc/issues/9989))；
 * 添加 `mysql` 的 `mysqlclient` 依赖在 `Mac` 下一直添加不上，可能是当前的 `MacOS` 下系统包含路径不对，通过这里的方法来[解决](https://stackoverflow.com/questions/58908156/why-bazel-not-search-system-include-paths)；
@@ -555,9 +568,11 @@ cmds={login,register,update,logout}, use admin tool to generate JSON data.
 * `protoc` 本地生成的 `cpp` 文件和 `Bazel` 里生成的可能会因为版本不一致出现不兼容[问题](https://github.com/protocolbuffers/protobuf/issues/7137
 )
 
-## 后续
+## 扩展
 
-1. 请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
-2. 请求字段校验用 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
-3. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)。
-4. 编译环境打包
+1. 阻塞队列替换为持久化等效果更好的常用的中间件；
+2. 消息较多时，批量推送（`login.proto`的定义中消息已是`repeated`）；
+3. （gRPC）请求日志打印采用拦截器模式（拦截器目前处于实验状态），健康检查，异步；
+4. 请求字段校验用 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)
+5. `HTTP` 协议转 `gRPC` 和 `Swagger` 文档生成可参考 [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway); 目前 `gateway` 官方不直接支持 [`C++`](https://github.com/grpc-ecosystem/grpc-gateway/issues/15)，不过有 `C++` 嵌入 `GO` 的[示例](https://github.com/yugui/grpc-gateway/tree/example/embed/examples/cmd/example-cxx-server)。
+6. 编译环境打包
