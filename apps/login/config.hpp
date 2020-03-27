@@ -14,8 +14,6 @@
 #include "apps/3rd/sql/mysqlplus.h"
 #include "apps/utils/conn_options_jsonify.hpp"
 
-
-
 namespace login
 {
 

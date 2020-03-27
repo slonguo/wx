@@ -9,8 +9,8 @@
 
 namespace login
 {
-using std::string;
 using std::shared_ptr;
+using std::string;
 using utils::BlockingQueue;
 
 class StreamItem

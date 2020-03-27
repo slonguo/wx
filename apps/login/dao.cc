@@ -1,5 +1,5 @@
-#include <iostream>
 #include <string>
+
 #include "dao.hpp"
 #include "apps/3rd/sql/mysqlplus.h"
 #include "apps/utils/time.hpp"
@@ -9,10 +9,6 @@
 
 namespace login
 {
-
-using daotk::mysql::mysql_exception;
-using daotk::mysql::mysqlpp_exception;
-
 using login::UserStatus;
 
 bool Dao::Init(DBConfig dc)

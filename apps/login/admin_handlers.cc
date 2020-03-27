@@ -15,7 +15,7 @@ using std::shared_ptr;
 
 using nlohmann::json;
 
-void AdminHandlers::Init()
+void AdminHandlers::init()
 {
     cmdHandlers = {
         {"config", &AdminHandlers::setConfig},

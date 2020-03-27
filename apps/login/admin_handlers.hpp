@@ -17,15 +17,15 @@ using protocol::login::v1::AdminResp;
 class AdminHandlers
 {
 public:
-    explicit AdminHandlers() { Init(); };
+    explicit AdminHandlers() { init(); };
 
-    void Init();
     bool HandleAdminReq(string, string, string, AdminResp *);
 
     AdminHandlers(const AdminHandlers &) = delete;
     AdminHandlers &operator=(const AdminHandlers &) = delete;
 
 private:
+    void init();
     void setConfig(string, string, AdminResp *);
     void mockData(string, string, AdminResp *);
     void inspectServer(string, string, AdminResp *);

@@ -1,10 +1,8 @@
 #include "proto_helper.hpp"
-
 #include "apps/utils/time.hpp"
 #include "apps/utils/strings.hpp"
 #include "apps/3rd/md5.hpp"
 #include "defs.hpp"
-
 #include "session.hpp"
 
 namespace login

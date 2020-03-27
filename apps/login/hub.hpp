@@ -8,7 +8,6 @@
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
-#include <functional>
 
 #include "defs.hpp"
 #include "stream.hpp"
