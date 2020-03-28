@@ -10,7 +10,7 @@ HubStats Hub::GetHubStats()
 
 void Hub::AddMsg(string userName, shared_ptr<MsgItem> item)
 {
-    std::unique_lock<shared_mutex> lock(mutex_);
+    unique_lock<shared_mutex> lock(mutex_);
     auto stream = mapper_.find(userName);
     if (stream != mapper_.end() && stream->second != nullptr)
     {
@@ -21,7 +21,7 @@ void Hub::AddMsg(string userName, shared_ptr<MsgItem> item)
 // broadcast global notifications
 void Hub::Broadcast(shared_ptr<MsgItem> item)
 {
-    std::unique_lock<shared_mutex> lock(mutex_);
+    unique_lock<shared_mutex> lock(mutex_);
 
     for (auto &e : mapper_)
     {
@@ -46,13 +46,13 @@ shared_ptr<StreamItem> Hub::GetUser(string userName)
 
 void Hub::AddUser(string userName, shared_ptr<StreamItem> item)
 {
-    std::unique_lock<shared_mutex> lock(mutex_);
+    unique_lock<shared_mutex> lock(mutex_);
     mapper_[userName] = item;
 }
 
 void Hub::DelUser(string userName)
 {
-    std::unique_lock<shared_mutex> lock(mutex_);
+    unique_lock<shared_mutex> lock(mutex_);
     mapper_.erase(userName);
 }
 } // namespace login

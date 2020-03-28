@@ -44,6 +44,7 @@ using CmdMap = map<string, set<SubCmdItem>>;
 void help(map<string, set<SubCmdItem>> &cmds, string command = "");
 auto isWord = [](string &cmd) { return all_of(cmd.begin(), cmd.end(), [](char c) { return isalpha(c); }); };
 auto isAlphaNum = [](string &str) { return all_of(str.begin(), str.end(), [](char c) { return isalnum(c); }); };
+auto isNum = [](string &str) { return all_of(str.begin(), str.end(), [](char c){ return isdigit(c); });};
 auto toLower = [](string &cmd) {for_each(cmd.begin(), cmd.end(), [](char &c) { c = tolower(c); });return cmd; };
 auto toUpper = [](string &cmd) {for_each(cmd.begin(), cmd.end(), [](char &c) { c = toupper(c); });return cmd; };
 auto in = [](const string &s, vector<string> &vec) -> bool { return std::any_of(vec.begin(), vec.end(), [&s](string &e) { return s == e; }); };

@@ -6,6 +6,7 @@
 #include "apps/3rd/loguru.hpp"
 #include "apps/3rd/json.hpp"
 #include "apps/login/defs.hpp"
+#include "apps/utils/strings.hpp"
 
 namespace login
 {
@@ -69,6 +70,17 @@ bool Dao::AddRegisterInfo(const RegisterReq *req)
 
 bool Dao::GetUserBasicInfo(string userName, UserBasicInfo &ubi)
 {
+    // for security's sake a **prepared statement** should be used with params bound.
+    // but when doing queries with prepared stamement here, 
+    // something seemd wrong with the result fetch()
+    // so direct `query` is used here. 
+    // ** sophisticated ORM framework is needed when in production **
+    // anyhow and fortunately, we only have a `userName` input and the pattern can be easily identified.
+
+    if (!utils::isAlphaNum(userName))
+    {
+        return false;
+    }
     shared_ptr<connection> conn = cp_.get();
     auto res = conn->query("select user_name, user_nick, gender, avatar, signature from user_basic_tab where user_name = \"%s\" limit 1", userName.c_str());
     if (!res.is_empty())
@@ -82,6 +94,18 @@ bool Dao::GetUserBasicInfo(string userName, UserBasicInfo &ubi)
 
 bool Dao::GetUserSecureInfo(string userName, UserSecureInfo &usi)
 {
+    // for security's sake a **prepared statement** should be used with params bound.
+    // but when doing queries with prepared stamement here, 
+    // something seemd wrong with the result fetch()
+    // so direct `query` is used here. 
+    // ** sophisticated ORM framework is needed when in production **
+    // anyhow and fortunately, we only have a `userName` input and the pattern can be easily identified.
+
+    if (!utils::isAlphaNum(userName))
+    {
+        return false;
+    }
+
     shared_ptr<connection> conn = cp_.get();
     auto res = conn->query("select user_name, phone_number, passwd, status from user_secure_tab where user_name = \"%s\" limit 1", userName.c_str());
     if (!res.is_empty())
@@ -95,6 +119,18 @@ bool Dao::GetUserSecureInfo(string userName, UserSecureInfo &usi)
 
 bool Dao::GetUserSecureInfoByPhone(string phoneNumber, UserSecureInfo &usi)
 {
+    // for security's sake a **prepared statement** should be used with params bound.
+    // but when doing queries with prepared stamement here, 
+    // something seemd wrong with the result fetch()
+    // so direct `query` is used here. 
+    // ** sophisticated ORM framework is needed when in production **
+    // anyhow and fortunately, we only have a `phoneNumber` input and the pattern can be easily identified.
+
+    if (!utils::isNum(phoneNumber))
+    {
+        return false;
+    }
+
     LOG_F(INFO, "begin GetUserSecureInfoByPhone. phone:%s", phoneNumber.c_str());
     shared_ptr<connection> conn = cp_.get();
     auto res = conn->query("select user_name, phone_number, passwd, status from user_secure_tab where phone_number = \"%s\" limit 1", phoneNumber.c_str());
@@ -109,6 +145,18 @@ bool Dao::GetUserSecureInfoByPhone(string phoneNumber, UserSecureInfo &usi)
 
 bool Dao::GetUserLastLoginInfo(string userName, UserLoginInfo &uli)
 {
+    // for security's sake a **prepared statement** should be used with params bound.
+    // but when doing queries with prepared stamement here, 
+    // something seemd wrong with the result fetch()
+    // so direct `query` is used here. 
+    // ** sophisticated ORM framework is needed when in production **
+    // anyhow and fortunately, we only have a `userName` input and the pattern can be easily identified.
+
+    if (!utils::isAlphaNum(userName))
+    {
+        return false;
+    }
+
     shared_ptr<connection> conn = cp_.get();
     auto res = conn->query(
         "select system_type, device_type, channel_type, device_name, device_id, ip, login_time, logout_time from user_login_tab where user_name = \"%s\" order by login_time desc limit 1",
@@ -164,6 +212,7 @@ bool Dao::AddLoginInfo(const LoginReq *req)
     cp_.release(conn);
     return true;
 }
+
 bool Dao::UpdateLogoutInfo(string userName)
 {
     shared_ptr<connection> conn = cp_.get();

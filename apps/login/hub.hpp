@@ -17,6 +17,7 @@ namespace login
 using std::shared_lock;
 using std::shared_mutex;
 using std::shared_ptr;
+using std::unique_lock;
 using std::string;
 using std::unordered_map;
 

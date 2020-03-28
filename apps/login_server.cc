@@ -352,6 +352,7 @@ void RunServer(SvrConfig sc)
 
     ServerBuilder builder;
 
+    // TODO(slonguo): use secure credentials
     builder.AddListeningPort(serverAddr, grpc::InsecureServerCredentials());
     builder.RegisterService(&loginService);
 

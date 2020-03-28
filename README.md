@@ -315,13 +315,13 @@ CREATE TABLE `user_login_tab` (
 
 由于主要是实验性质，所以并没有依赖安全相关的重操作，但是在设计上，有这方面的考虑。
 
-* `gRPC` 的 `secure credentials`，启动选项里添加，实验中没有添加，参考[示例](https://github.com/grpc/grpc/issues/9593),注意证书的生成中的生命周期（`--days`）。
+* `gRPC` 的 `secure credentials`，启动选项里添加，实验中没有添加，添加证书操作可参考[示例](https://github.com/grpc/grpc/issues/9593)，注意证书的生成中的参数（`--days` 和 `CN`）。
 * 用户数据表分安全信息和基本信息，安全信息中包含用户密码和手机号，原则上，密码需采用破解难度高的加密库（如`bcrypt`）,同时这个表最好置于另一个访问权限高的数据库中，通过专门的 `RPC` 服务调用。本次操作中，只取了 `md5` 码，同基本信息表置于同一数据库中直接访问数据库得到。
 * 用户注册后，会返回 `token`，在随后的操作中，都会带着 `token` 来操作。但是不同的操作对 `token` 的安全等级不尽相同，因此对同一 `token` 也可能有不同的等级的鉴定。理想的方式是加密了些关键参数（如时间戳、系统类型），在需要调整安全等级时，虽然数据库没存储具体值，但是可以根据相关字段反解。（见上面对 `CommonHeaderReq` 的说明）。
 * 用户输入校验，对注册和请求做签名校验（见上面说明）。对每个具体字段的长度，大小，格式等，这里没有做校验，后续可以参考 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)。
 * 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)和拦截器，目前这两者处于 `experimental` 状态 ？
 * 由于对配置项添加了脱敏处理（`to_json`），打印日志时不会打出具体的 `MySQL` 账号密码等配置。
-* `SQL` 操作尽量模版化，用 `prepared statement`，目前所选的依赖包里，`prepared statement` 对查询操作似乎有点问题，所以就直接用了 `query`。可改成支持 `ORM` 操作的依赖。
+* `SQL` 操作尽量模版化，用 `prepared statement`，目前所选的依赖包里，`prepared statement` 对查询操作结果 `fetch` 似乎有点问题( `exec` 操作没问题，所以写操作都可以用 `prepared statement`)，所以就直接用了 `query`。不过由于当前的查询参数都是`userName` 或 `phoneNumber`, 模式容易鉴定，所以问题不大。实验中的 `MySql` 依赖是基于官方接口的现代 `C++` 包装， 生产环境可改成支持 `ORM` 操作的依赖。
 
 ### 代码组织
 

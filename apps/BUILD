@@ -126,6 +126,7 @@ cc_library(
     deps = [
         ":login_defs",
         ":login_config",
+        ":utils_strings",
         # ":3rd_mysqlplus"
         "//apis:loginpb",
         ":3rd_json",
