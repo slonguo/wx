@@ -85,7 +85,7 @@
 
 对 `CommonHeaderReq` 一些说明：
 
-1. 每个请求都会带这个字段。`token` 是64位，对 `stamp` 是毫秒级时间戳。
+1. 每个请求都会带这个字段。`user_name` 为 16位的 `alphanum`，`token` 是64位，`stamp` 是毫秒级时间戳。
 2. 对注册请求，`token = md5(密码)+md5(验证码)`，实验中为方便测试，`mock` 数据生成的密码和验证码对应手机号中的中间四位和后四位。
 3. 对非注册请求，`token = md5(src+key)+bin2hex(src)`, 其中 `src` 为 `systemType + timestamp` 组成的16位对其的字符串, `key` 为 `user_name`, 其中 `systemType` 定义见 `defs.hpp`，数值不超过8，`timestamp` 为毫秒级13位，这两字段填充16位没问题。即可以通过 `header` 直接校验 `token` 是否有效。在安全等级较高的情况下，由于 `timestamp` 和 `systemType` 等信息都存储在登录信息表中，也可以通过表中字段合成来校验，免去存缓存。
 
