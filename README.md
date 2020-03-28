@@ -49,8 +49,8 @@
 
 * `Admin Handlers` 处理来自 `admin` 端的请求；
 * `Client Handlers` 处理来自用户的请求，其中对服务端到客户端的流，采取了阻塞队列的方式。可考虑使用 `Redis` 的 [BRPOPLPUSH](https://redis.io/commands/brpoplpush) 命令或持久化效果更好的消息队列；
-* `Hub` 管理到用户的推送流和消息转发；
-* `Utils` 为一些 `token` 生成/解码，`proto` 转换等方便函数或类；
+* `Hub` 管理用户的流和消息转发；
+* `Utils` 为一些 `token` 生成/解码，`proto` 转换，`mock` 数据生成等方便函数或类；
 * `DB` 存储用户注册登录等基本信息，配置了连接池。
 
 其中客户端与服务端交互有：
@@ -448,7 +448,7 @@ clean:
 	bazel clean
 ```
 
-注意到由于上面提到的代码组织的模式，对 `proto` 文件需要本地编译（`build_proto.sh`），这就需要本地编译安装 `protoc` 和关联的 `grpc_cpp_plugin` 插件。如果需要协议字段检查或 `HTTP` 转 `gRPC` 或根据协议生成 `Swagger` 文档注释，需要另安装类似 `protoc-gen-validate` 和 `grpc-gateway` 生态相关的插件（这两个目前对 `Golang` 和 `Python` 支持较好，对 `C++` 支持不是很完善）。
+注意到由于上面提到的代码组织的模式，对 `proto` 文件需要本地编译（`build_proto.sh`），这就需要本地编译安装 `protoc` 和关联的 `grpc_cpp_plugin` 插件。如果需要协议字段检查或 `HTTP` 转 `gRPC` 或根据协议生成 `Swagger` 文档注释，需要另安装类似 `protoc-gen-validate` 和 `grpc-gateway` 生态相关的插件（这两个目前对 `Golang` 和 `Python` 支持较好，对 `C++` 支持不是很完善）（`proto` 的编译环境可以 `docker` 化）。
 
 本实验中由于已上传了相关的 `proto` 生成文件，所以不需依赖 `protoc` 链，直接 `make build` 即可。
 
@@ -475,7 +475,7 @@ clean:
 * 头文件依赖调整
 * `MySQL` 8.x 中移除了 `my_bool` 类型，这里做了修改
 * 编译时 `std::move` 的调整
-* `prepared_statement` 预处理时查询结果似乎有问题，所以查询用了 `query` 接口，但是这里难防注入。整体看，待换成 `ORM` 式的依赖
+* `prepared_statement` 预处理时查询结果 `fetch` 似乎有问题，所以查询用了 `query` 接口，但是这里难防注入(目前通过参数校验来处理)。整体看，待换成 `ORM` 式的依赖
 
 ## 操作
 

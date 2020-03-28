@@ -171,12 +171,12 @@ inline bool IsValidLoginType(MsgType t) { return IsValidMsgType(t) && t != MT_Lo
 inline void to_json(json &j, const UserSecureInfo &b)
 {
 	// for security's sake, phone number and passwd are (partially) obscured
-	string passwd = b.phoneNumber.substr(0, 3) + "xxxx" + b.phoneNumber.substr(7, 11);
+	string phoneNumber = b.phoneNumber.substr(0, 3) + "xxxx" + b.phoneNumber.substr(7, 11);
 	j = json{
 		{"user_name", b.userName},
 		{"status", b.status},
 		{"passwd", "xxxx"},
-		{"phone_number", passwd},
+		{"phone_number", phoneNumber},
 	};
 }
 
