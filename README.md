@@ -118,144 +118,12 @@
 
 登录目前只用 `token` 来登录，协议中已定义了 `login_type`，容易扩展，实验中忽略了 `login_type` 的校验，做了签名校验、`token` 有效性校验和用户存在性校验等。
 
+详细 `proto` 设计可见 [./apis/protocol/v1/login.proto](./apis/protocol/v1/login.proto)
 
-
-```protobuf
-syntax = "proto3";
-
-package protocol.login.v1;
-
-// Common Request Header
-message CommonHeaderReq {
-    string user_name = 1;
-    string token = 2;
-    uint64 stamp = 3;
-}
-
-// Common Response Header
-message CommonHeaderResp {
-    uint32 code = 1;
-    string message = 2;
-}
-
-// DeviceInfo definitions
-message DeviceInfo {
-    // system_type can be: iOS, Android, Windows, MacOS, Linux, Web etc.
-    uint32 system_type = 1;
-
-    // device_type can be iPhone X, Huawei P30, Xiaomi 10 etc.
-    uint32 device_type = 2;
-
-    // channel_type can be App Store, Google Play, Mi Store etc.
-    uint32 channel_type = 3;
-
-    // device_name is the name set by the user, like: Ricky Gervais
-    string device_name = 4;
-
-    // device_id is the unique identifier of the device.
-    string device_id = 5;
-}
-
-// Register Request
-message RegisterReq {
-    CommonHeaderReq header = 1;
-    string phone_number = 2;
-
-    DeviceInfo device_info = 3;
-    string sign = 4;
-}
-
-// Register Response
-message RegisterResp {
-    CommonHeaderResp header = 1;
-    string token = 2;
-}
-
-// Login Request
-message LoginReq {
-    CommonHeaderReq header = 1;
-    uint32 login_type = 2;
-    DeviceInfo device_info = 3;
-    string sign = 4;
-}
-
-// Login Response
-message LoginResp {
-    message MessageItem {
-        uint32 msg_type = 1;
-        string content = 2;
-    }
-
-    CommonHeaderResp header = 1;
-    repeated MessageItem messages = 2;
-}
-
-// Basic Info
-message BasicInfoItem {
-    string user_name = 1;
-    string user_nick = 2;
-    uint32 gender = 3;
-    string avatar = 4;
-    string signature = 5;
-}
-
-// Basic Info Update Request
-message UpdateBasicInfoReq {
-    CommonHeaderReq header = 1;
-    BasicInfoItem info = 2;
-}
-
-// Basic Info Update Response
-message UpdateBasicInfoResp {
-    CommonHeaderResp header = 1;
-    BasicInfoItem info = 2;
-}
-
-// Logout Request
-message LogoutReq {
-    CommonHeaderReq header = 1;
-}
-
-
-// Logout Response
-message LogoutResp {
-   CommonHeaderResp header = 1;
-}
-
-// Admin Operations
-// Note: this exists mainly to facilitate testing.
-//       no validation operations(i.e. header check) are performed
-message AdminReq {
-    CommonHeaderReq header = 1;
-    // cmd can be: change config, send broadcast, mock data etc.
-    string cmd = 2; 
-    // f1 and f2 are placeholders. 
-    // The values can be subcommands or data or even empty
-    // They vary in line with the specific `cmd`s
-    string f1 = 3;
-    string f2 = 4;
-}
-
-message AdminResp {
-    CommonHeaderResp header = 1;
-    string result = 2;
- }
-
-
-// Login API 
-service LoginAPI {
-    rpc Register(RegisterReq) returns (RegisterResp){}
-    rpc Login(LoginReq) returns (stream LoginResp){}
-    rpc UpdateBasicInfo(UpdateBasicInfoReq) returns (UpdateBasicInfoResp){}
-    rpc Logout(LogoutReq) returns (LogoutResp){}
-    rpc AdminOp(AdminReq) returns (AdminResp){}
-}
-
-```
 
 ### 错误码和结构体等定义
 
-相关的有 消息类型，返回码，设备系统类型、设备类型、渠道类型，登录类型，用户状态还有相关的结构体等等，定义都在 `defs.hpp` 中。
+相关的有 消息类型，返回码，设备系统类型、设备类型、渠道类型，登录类型，用户状态还有相关的结构体等等，定义都在 [./apps/login/defs.hpp](./apps/login/defs.hpp) 中。
 
 ### 库表设计
 
@@ -273,63 +141,8 @@ service LoginAPI {
 
 `register` 和 `login` 两张表中的 `ip` 字段操作中没有用到。
 
+详细的数据表的 `schema` 可见 [./confs/login_db.sql](./confs/login_db.sql)
 
-```sql
-CREATE TABLE `user_register_tab` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(16) NOT NULL,
-  `system_type` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `device_type` int(11) unsigned NOT NULL DEFAULT '0',
-  `channel_type` int(11) unsigned NOT NULL DEFAULT '0',
-  `device_name` varchar(16) NOT NULL DEFAULT '',
-  `device_id` varchar(64) NOT NULL DEFAULT '',
-  `ip` char(16) NOT NULL DEFAULT '',
-  `ctime` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uniq_name` (`user_name`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE `user_basic_tab` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(16) NOT NULL,
-  `user_nick` varchar(32) NOT NULL DEFAULT '',
-  `gender` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `avatar` varchar(255) NOT NULL DEFAULT '',
-  `signature` varchar(64) NOT NULL DEFAULT '',
-  `ctime` int(11) NOT NULL DEFAULT '0',
-  `mtime` int(11) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uniq_name` (`user_name`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE `user_secure_tab` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(16) NOT NULL,
-  `phone_number` char(11) NOT NULL COMMENT '手机号，只考虑86的',
-  `passwd` char(32) NOT NULL COMMENT 'md5串，实际中用bcrypt',
-  `status` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `ctime` int(11) unsigned NOT NULL DEFAULT '0',
-  `mtime` int(11) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uniq_name` (`user_name`) USING BTREE,
-  UNIQUE KEY `idx_uniq_phone` (`phone_number`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE `user_login_tab` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(16) NOT NULL,
-  `system_type` tinyint(4) unsigned NOT NULL DEFAULT '0',
-  `device_type` int(11) unsigned NOT NULL DEFAULT '0',
-  `channel_type` int(11) unsigned NOT NULL DEFAULT '0',
-  `device_name` varchar(16) NOT NULL DEFAULT '',
-  `device_id` varchar(64) NOT NULL DEFAULT '',
-  `ip` char(16) NOT NULL DEFAULT '',
-  `login_time` bigint(20) unsigned NOT NULL DEFAULT '0',
-  `logout_time` bigint(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `idx_uniq_user_login` (`user_name`,`login_time`) USING BTREE
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
-```
 
 ### 安全性
 
@@ -338,7 +151,7 @@ CREATE TABLE `user_login_tab` (
 * `gRPC` 的 `secure credentials`，启动选项里添加，实验中没有添加，添加证书操作可参考[示例](https://github.com/grpc/grpc/issues/9593)，注意证书的生成中的参数（`--days` 和 `CN`）。
 * 用户数据表分安全信息和基本信息，安全信息中包含用户密码和手机号，原则上，密码需采用破解难度高的加密库（如`bcrypt`）,同时这个表最好置于另一个访问权限高的数据库中，通过专门的 `RPC` 服务调用。本次操作中，只取了 `md5` 码，同基本信息表置于同一数据库中直接访问数据库得到。
 * 用户注册后，会返回 `token`，在随后的操作中，都会带着 `token` 来操作。但是不同的操作对 `token` 的安全等级不尽相同，因此对同一 `token` 也可能有不同的等级的鉴定。理想的方式是加密了些关键参数（如时间戳、系统类型），在需要调整安全等级时，虽然数据库没存储具体值，但是可以根据相关字段反解或合成，无需单独存储。（见上面对 `CommonHeaderReq` 的说明）。
-* 用户输入校验，对注册和请求做签名校验（见上面说明）。对每个具体字段的长度，大小，格式等，这里没有做校验，后续可以参考 `Envoy` 的 [Proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)。
+* 用户输入校验，对注册和请求做签名校验（见上面说明）。对每个具体字段的长度，大小，格式等，这里没有做校验，后续可以参考 `Envoy` 的 [proto-gen-validate](https://github.com/envoyproxy/protoc-gen-validate)。
 * 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)和拦截器，目前这两者处于 `experimental` 状态 ？
 * 由于对配置项添加了脱敏处理（`to_json`），打印日志时不会打出具体的 `MySQL` 账号密码等配置。
 * `SQL` 操作尽量模版化，用 `prepared statement`，目前所选的依赖包里，`prepared statement` 对查询操作结果 `fetch` 似乎有点问题( `exec` 操作没问题，所以写操作都可以用 `prepared statement`)，所以就直接用了 `query`。不过由于当前的查询参数都是`userName` 或 `phoneNumber`, 模式容易鉴定，所以问题不大。实验中的 `MySql` 依赖是基于官方接口的现代 `C++` 包装， 生产环境可改成支持 `ORM` 操作的依赖。
