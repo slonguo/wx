@@ -8,6 +8,8 @@
     * [库表设计](#库表设计)
     * [安全性](#安全性)
     * [代码组织](#代码组织)
+    * [扩展性](#扩展性)
+    * [测试](#测试)
 * [编译](#编译)
     * [本地环境](#本地环境)
     * [三方依赖](#三方依赖)
@@ -19,7 +21,7 @@
 
 终端登录设计：
 * 可注册登录；
-* 同时只能在一台设备登录，根据管理策略管理设备踢出情况；
+* 同时只能在一台设备登录，多端登录时根据管理策略管理设备踢出情况；
 * `C++`、`gRPC` 实现，`Bazel` 编译管理依赖，考虑数据、传输等安全
 
 
@@ -31,19 +33,14 @@
 
 1）客户端，发送操作请求(注册，登录，更新，登出)
 
-2）后台管理端，做数据 `mock`，内部组件数据观察，配置项动态变更（如设备踢出等），信息广播和查看用户数据等
+2）后台管理端，用于数据 `mock`，内部组件 `metrics` 观察，配置项动态变更（如设备踢出等），信息广播和查看用户数据等。后台管理端这些功能也可作测试用。
 
-3）服务端，接收和处理用户和管理端的请求
+3）服务端，接收和处理用户和管理端的请求，其中登录后服务端保持与客户端的单向流（`stream`），通过阻塞队列，将变更的消息（更新、踢出、广播等）推送给客户端。
 
 设计图如下：
 
 ![arch](https://www.plantuml.com/plantuml/svg/TP9HRiCW38RVEONLzrwWcdQHRK8Kd0ILG0PaqpJrxZEGfD1agAg8VzkOdyzW5o4wyBeV8YZjKKRjB6D2HkTX3kYNhL2ZflWav4tq22VZUcsvD1fjFC4lk--qN74iKTilz4a3Mfqp2ZsSIZC-2AiC-h3AQKdX5SnM-1_kyNF640FRnBK-JSj3z2Z6kZOjAfaHhiR9cxOzpvzRmfsLVzPCCypNkajoHjZU89GJ-2YcYTpPwoE6G7VbdVFVDFQISs-xPtF-l-f8WxOHRSD4HxH1wMod-pRMOypFrWIltWabHOZrB4f4SHM1NcNTrNEyJSwPZwFPvwXD-CSRkdlYPwzCtaN71pJJmn3wfL7XvNn-XHeebksfumM_Qb_4raQu54PWOwHkMYgU8DkL0B7-Rg4Gkhmr8LCcNUWgdLeEdlkcZEJWeR3Qn9eUMThJiulal2UMsy-Z3BOGb3M26vh0IW1BvEL8VcMsqFIupaOI77YGSTmEkC1DKxFHAVm3)
 
-
-
-操作可参考这里：
-
-[![asciicast](https://asciinema.org/a/313861.svg)](https://asciinema.org/a/313861)
 
 `server` 的主要模块说明如下：
 
@@ -52,6 +49,32 @@
 * `Hub` 管理用户的流和消息转发；
 * `Utils` 为一些 `token` 生成/解码，`proto` 转换，`mock` 数据生成等方便函数或类；
 * `DB` 存储用户注册登录等基本信息，配置了连接池。
+
+
+操作可参考这里的录屏：
+
+[![asciicast](https://asciinema.org/a/313861.svg)](https://asciinema.org/a/313861)
+
+录屏中面板布局如下：
+```
++------------------------------------------------------------------------------+
+|                                                                              |
+|                                                                              |
+|                                  Admin Panel                                 |
+|              (mock data, inspect, broadcast, config, getuser)                |
+|                                                                              |
+|                                                                              |
+|------------------------------------------------------------------------------|
+|                     |                     |                                  |
+|     User1 Login1    |    User1 Login2     |                                  |
+|                     |                     |                                  |
+|-------------------------------------------|          Server Panel            |
+|                     |                     |                                  |
+|     User2 Login1    |    User2 Login2     |                                  |
+|                     |                     |                                  |
++------------------------------------------------------------------------------+
+```
+
 
 其中客户端与服务端交互有：
 
@@ -71,7 +94,6 @@
 ### 数据流
 
 1. 用户与 `client` 端交互时，采用 `命令 JSON包体` 的格式，`client` 解析 `JSON` 包体并转为 `protobuf` 格式， `client` 与 `server` 交互采用 `grpc/protobuf`;
-
 2. 用户与 `admin` 端交互时，采用 `命令 子命令1/数据1 子命令2/数据2 ` 的格式，其中后面两个参数根据具体的命令可选。`admin` 与 `server` 交互采用 `grpc/protobuf`
 
 由于 `Protobuf` 中定义的字段比较多，输入也不便，所以采用输入为 `JSON` 包体、`client` 将其转为 `protobuf` 格式再与 `server` 交互。另外由于做了一些签名校验，手动输入也会不大方便，所以`admin` 端提供了 `client` 端所有命令的即时 `mock` 数据,方便测试。
@@ -80,8 +102,6 @@
 
 
 ### 接口和协议
-
-
 
 对 `CommonHeaderReq` 一些说明：
 
@@ -241,17 +261,17 @@ service LoginAPI {
 
 共四张表：
 
-* `user_register_tab` 用户注册信息表，`append-only`;
-* `user_basic_tab` 用户基本信息表
-* `user_secure_tab` 用户安全信息表，原则上需要对 `passwd` 做 `bcrypt` 等加密，当前只做 `md5` 处理
-* `user_login_tab` 用户登录信息表
+* `user_basic_tab` 用户基本信息表，当前更新用户信息操作只会更新此表；
+* `user_secure_tab` 用户安全信息表，原则上需要对 `passwd` 做 `bcrypt` 等加密，当前只做 `md5` 处理；
+* `user_login_tab` 用户登录信息表，记录了 `login_time` 和 `system_type`，可还原 `token`。
+* `user_register_tab` 用户注册信息表，只追加不修改;
+
 
 用户新注册时，会同时写 `register`, `secure` 和 `basic` 三张表。原则上是一事务。但是依赖的三方库中貌似没找到事务支持。
 
 用户登录时，会添加登录记录，登出或踢出时，会更新登出时间。
 
 `register` 和 `login` 两张表中的 `ip` 字段操作中没有用到。
-
 
 
 ```sql
@@ -322,9 +342,9 @@ CREATE TABLE `user_login_tab` (
 * 可考虑添加 `gRPC` 框架中的[健康检查](https://github.com/grpc/grpc/issues/13962)和拦截器，目前这两者处于 `experimental` 状态 ？
 * 由于对配置项添加了脱敏处理（`to_json`），打印日志时不会打出具体的 `MySQL` 账号密码等配置。
 * `SQL` 操作尽量模版化，用 `prepared statement`，目前所选的依赖包里，`prepared statement` 对查询操作结果 `fetch` 似乎有点问题( `exec` 操作没问题，所以写操作都可以用 `prepared statement`)，所以就直接用了 `query`。不过由于当前的查询参数都是`userName` 或 `phoneNumber`, 模式容易鉴定，所以问题不大。实验中的 `MySql` 依赖是基于官方接口的现代 `C++` 包装， 生产环境可改成支持 `ORM` 操作的依赖。
+* 操作都是线程安全。
 
 ### 代码组织
-
 
 
 代码组织如下。设计上将 `proto` 文件目录和服务逻辑分离，并没有按照 `bazel` 教程将 `proto` 文件和代码放在一起。
@@ -352,10 +372,10 @@ CREATE TABLE `user_login_tab` (
 │   │           ├── login.pb.cc
 │   │           └── login.pb.h
 │   └── protocol                      # 协议目录，按版本分
-│       ├── v1
+│       ├── v1                        # v1 为实验中用到的 proto
 │       │   └── login.proto
-│       └── v2
-│           └── login.proto
+│       └── v2                        # v2 加了 proto-gen-validate 和 grpc-gateway-swagger
+│           └── login.proto           #    的 proto 格式，只是 demo, 没有用到
 ├── apps                              # 服务代码主目录
 │   ├── 3rd                           # 三方依赖，由于多是单文件，所以放在一起
 │   │   ├── bin2ascii.hpp             #    十六进制和字符串间的转换
@@ -367,15 +387,12 @@ CREATE TABLE `user_login_tab` (
 │   │   ├── md5.hpp             
 │   │   └── sql                       #    mysql 封装接口，做了一些改动（见后文）
 │   │       ├── mysqlplus.h
-│   │       └── polyfill
-│   │           ├── datetime.h
-│   │           ├── function_traits.h
-│   │           └── optional.hpp
+│   │       └── (sub dirs omitted)
 │   ├── BUILD                         # 服务端 build 文件，依赖了 apis 的build
 │   ├── login                         # 登录的一些功能性模块
 │   │   ├── admin_handlers.cc         # admin handlers 处理 admin 的请求
 │   │   ├── admin_handlers.hpp
-│   │   ├── config.cc                 # 配置相关，对象可全 JSON 化 
+│   │   ├── config.cc                 # 配置相关，对象可全 JSON 化
 │   │   ├── config.hpp
 │   │   ├── dao.cc                    # DB 连接 相关
 │   │   ├── dao.hpp
@@ -389,19 +406,13 @@ CREATE TABLE `user_login_tab` (
 │   ├── login_admin.cc                # admin app的主逻辑
 │   ├── login_client.cc               # client app的主逻辑
 │   ├── login_server.cc               # server app的主逻辑
-│   ├── tests                         # 测试相关
-│   │   ├── bin2ascii_test.cc
-│   │   ├── config_test.cc
-│   │   ├── json_test.cc
-│   │   ├── loguru_test.cc
-│   │   ├── md5_test.cc
-│   │   ├── mysql_test.cc
-│   │   └── strings_test.cc
+│   ├── tests                         # 测试相关(子目录里都是.cc文件，这里略去)
+│   │   ├── xxx.cc(omitted)           # utils 和 3rd 关联的测试
 │   └── utils                         # 工具箱
-│       ├── blocking_queue.hpp        #   阻塞队列
+│       ├── blocking_queue.hpp        #   阻塞队列，线程安全
 │       ├── conn_options_jsonify.cc   #   对三方mysql依赖的连接选项的 json 对象化包装
 │       ├── conn_options_jsonify.hpp
-│       ├── conn_pool.hpp             #   连接池
+│       ├── conn_pool.hpp             #   连接池，线程安全
 │       ├── strings.cc                #   常用字符串处理函数
 │       ├── strings.hpp
 │       └── time.hpp                  #   时间相关函数
@@ -413,6 +424,20 @@ CREATE TABLE `user_login_tab` (
 └── mysql.BUILD                       # mysql的build，依赖处理
 
 ```
+
+### 扩展性
+
+由于使用了 `gRPC`, 代码全部使用现代 `C++`，没有调用系统特有 `API`，原则上可以跨平台，只需修改 `Bazel` 的编译项即可（主要是 `MySQL` 依赖）。
+
+字段枚举、接口、模式等方面都考虑到了可扩展性，基本不会影响框架改动。
+
+### 测试
+
+* 功能性测试
+  * `apps/tests` 下的测试，主要是针对一些三方依赖(`3rd`)和工具箱(`utils`)的通用接口和使用方法测试
+  * `login-admin` 设计出来也是为了方便对外 `apis` 接口的测试，`login-client` 中可将 `login-admin` `mock` 出来的数据手动修改测试（注意同时修改 `sign` 值）
+* 性能测试：实验中没有要求，暂无添加。由于有了 `login-admin` 的数据 `mock`，原则上可以很好的批量生成数据进行并发性能测试。
+
 
 
 ## 编译
@@ -454,7 +479,7 @@ clean:
 
 ### 三方依赖
 
-除了`gRPC` 和 `protobuf`，还有以下依赖：
+设计上尽量减少依赖或尽量使用轻量级依赖。除了`gRPC` 和 `protobuf`，还有以下依赖：
 
 * [JSON](https://github.com/nlohmann/json) , 对自定义结构体的序列化和反序列化处理非常方便（自定义 `to_json` 和 `from_json`）
 
